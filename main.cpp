@@ -4,14 +4,71 @@
 
 using namespace std;
 
+// base class of all user related functionality
 class User
 {
 public:
-    virtual void userMenu()
+    virtual void viewMovies() = 0;
+    //  virtual void book = 0;
+    //  virtual void selectSeat = 0;
+    //  virtual void makeChanges = 0;
+    virtual ~User() {}
+};
+
+// base class of all admin related functionality
+class Admin : public User
+{
+public:
+    // add more virtual void if necessary :>
+    virtual void manageMovieAndShowtime() = 0;
+    virtual void manageSeatLayout() = 0;
+    // virtual void saleReport = 0;
+    virtual ~Admin() {}
+};
+
+// all movies related logic goes here
+class Movies : public Admin
+{
+public:
+    // for user
+    void viewMovies() override
+    {
+        cout << "viewing movies, showtime, and ticket price...\n";
+        cout << "ask user if they want to book...\n"; // make booking function
+        cout << "select seats...\n";                  // make select seat function
+        cout << "payment option...\n";
+    }
+
+    // for admin
+    void manageMovieAndShowtime() override
+    {
+        cout << "Give option on what to do (edit title, edit show time, edit ticket price)\n";
+    }
+
+    // for admin
+    void manageSeatLayout() override
+    {
+        cout << "Option to view or edit seat availability\n";
+    }
+};
+
+// all display logic goes here
+class Display : public Movies
+{
+public:
+    void loginMenu()
+    {
+        cout << "\nWelcome to Group 3 Cinema: \n"
+             << "1 - User\n"
+             << "2 - Admin\n"
+             << "3 - Exit\n";
+    }
+
+    void userMenu()
     {
         cout << "\nWelcome to Group 3 Cinema: Your Ultimate Movie Experience! \n"
-             << "1 - View Seats\n"
-             << "2 - Choice 2\n"
+             << "1 - View Movies\n"
+             << "2 - View Seats\n"
              << "3 - Choice 3\n"
              << "4 - Choice 4\n"
              << "5 - Choice 5\n"
@@ -21,13 +78,8 @@ public:
              << "9 - Choice 9\n"
              << "0 - Exit to Login\n";
     }
-    // more virtual void for user centered
-};
 
-class Admin : public User
-{
-public:
-    virtual void adminMenu()
+    void adminMenu()
     {
         cout << "\nAdmin Dashboard: Manage Showtimes, Tickets, and More \n"
              << "1 - Choice 1\n"
@@ -40,19 +92,6 @@ public:
              << "8 - Choice 8\n"
              << "9 - Choice 9\n"
              << "0 - Exit to Login\n";
-    }
-    // more virtual void for admin centered
-};
-
-class Display : public Admin
-{
-public:
-    void loginMenu()
-    {
-        cout << "\nWelcome to Group 3 Cinema: \n"
-             << "1 - User\n"
-             << "2 - Admin\n"
-             << "3 - Exit\n";
     }
 
     void handleLoginInput()
@@ -87,6 +126,7 @@ public:
         }
     }
 
+    // all function related to user goes here
     void handleUserMenu()
     {
         string choice;
@@ -97,40 +137,12 @@ public:
 
             if (choice == "1")
             {
-                viewSeats();
+                viewMovies();
                 cout << "User Choice 1\n";
             }
             else if (choice == "2")
             {
-                cout << "User Choice 2\n";
-            }
-            else if (choice == "3")
-            {
-                cout << "User Choice 3\n";
-            }
-            else if (choice == "4")
-            {
-                cout << "User Choice 4\n";
-            }
-            else if (choice == "5")
-            {
-                cout << "User Choice 5\n";
-            }
-            else if (choice == "6")
-            {
-                cout << "User Choice 6\n";
-            }
-            else if (choice == "7")
-            {
-                cout << "User Choice 7\n";
-            }
-            else if (choice == "8")
-            {
-                cout << "User Choice 8\n";
-            }
-            else if (choice == "9")
-            {
-                cout << "User Choice 9\n";
+                viewSeats();
             }
             else if (choice == "0")
             {
@@ -145,6 +157,7 @@ public:
         }
     }
 
+    // all function related to admin goes here
     void handleAdminMenu()
     {
         string choice;
@@ -156,38 +169,6 @@ public:
             if (choice == "1")
             {
                 cout << "Admin Choice 1\n";
-            }
-            else if (choice == "2")
-            {
-                cout << "Admin Choice 2\n";
-            }
-            else if (choice == "3")
-            {
-                cout << "Admin Choice 3\n";
-            }
-            else if (choice == "4")
-            {
-                cout << "Admin Choice 4\n";
-            }
-            else if (choice == "5")
-            {
-                cout << "Admin Choice 5\n";
-            }
-            else if (choice == "6")
-            {
-                cout << "Admin Choice 6\n";
-            }
-            else if (choice == "7")
-            {
-                cout << "Admin Choice 7\n";
-            }
-            else if (choice == "8")
-            {
-                cout << "Admin Choice 8\n";
-            }
-            else if (choice == "9")
-            {
-                cout << "Admin Choice 9\n";
             }
             else if (choice == "0")
             {
@@ -222,4 +203,5 @@ int main()
 {
     Display display;
     display.handleLoginInput();
+    return 0;
 }
