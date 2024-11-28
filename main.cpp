@@ -48,35 +48,35 @@ public:
     Movies()
     {
         // Constructor initialize with default movies
-        movies.push_back({"Avengers: Endgame", "3:00 PM", 300});
-        movies.push_back({"Inception", "5:30 PM", 150});
-        movies.push_back({"The Lion King", "7:00 PM", 300});
-        movies.push_back({"Joker", "9:30 PM", 250});
+        movies.push_back({"Avengers: Endgame", "3:00", 300});
+        movies.push_back({"Inception", "5:30", 150});
+        movies.push_back({"The Lion King", "7:00", 300});
+        movies.push_back({"Joker", "9:30", 250});
     }
 
     void viewMovies() override
     {
-        //header for movies
-        cout << "Now Showing:\n";
-        cout << "---------------------------------------------\n";
-        cout << setw(5) << left << "No."
+        // Header for the movie list
+        cout << "\nNow Showing:\n";
+        cout << "----------------------------------------------------------\n";
+        cout << setw(10) << left << "Theater"
              << setw(25) << "Movie Title"
-             << setw(15) << "Showtime"
-             << setw(10) << "Price\n";
-        cout << "---------------------------------------------\n";
+             << setw(20) << "Showtime"
+             << setw(15) << "Ticket Price\n";
+        cout << "----------------------------------------------------------\n";
 
-
-        for (size_t i = 0; i < movies.size(); ++i)
+        for (int i = 0; i < movies.size(); ++i)
         {
-            cout << setw(5) << i + 19
+            cout << setw(10) << left << to_string(i + 1)
                  << setw(25) << movies[i].title
-                 << setw(15) << movies[i].showtime
-                 << setw(10) << movies[i].price << "\n";
+                 << setw(20) << movies[i].showtime
+                 << setw(15) << fixed << setprecision(2) << movies[i].price << "\n";
         }
-        cout << "---------------------------------------------\n";
+
+        cout << "----------------------------------------------------------\n";
     }
 
-       void manageMovieAndShowtime() override
+    void manageMovieAndShowtime() override
     {
         string choice;
         while (choice != "0")
@@ -118,16 +118,23 @@ private:
     {
         string title;
         string showtime;
+        int hour;
+        int minute;
         double price;
 
         cout << "Enter movie title: ";
         cin.ignore();
         getline(cin, title);
 
-        cout << "Enter showtime: ";
-        getline(cin, showtime);
+        cout << "Enter Date time: \n";
+        getValidHour("Hour", hour);
+        getValidMinute("Minute", minute);
 
-        getValidPrice("price",price );
+        stringstream ss;
+        ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
+        showtime = ss.str(); // combine valid hour and minute and assign to showtime
+
+        getValidPrice("price", price);
 
         movies.push_back({title, showtime, price});
         cout << "Movie added successfully!\n";
@@ -156,10 +163,9 @@ private:
 
         cout << "Enter new showtime (leave blank to keep current): ";
         getline(cin, showtime);
-        
+
         cout << "Enter new price: ";
         getValidPrice("price", price);
-      
 
         if (!title.empty())
             movies[index - 1].title = title;
@@ -181,9 +187,9 @@ private:
             cout << "Invalid movie number!\n";
             return;
         }
+        cout << "Movie \"" << movies[index - 1].title << "\" deleted successfully!\n";
 
         movies.erase(movies.begin() + index - 1);
-        cout << "Movie deleted successfully!\n";
     }
 };
 

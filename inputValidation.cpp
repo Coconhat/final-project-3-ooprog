@@ -103,6 +103,88 @@ void getValidQuantity(const string &label, int &amount)
     }
 }
 
+void getValidHour(const string &label, int &hour)
+{
+    string input;
+    while (true)
+    {
+        cout << "\nEnter " << label << ": ";
+        cin >> input;
+
+        // Check if the input contains non-numeric characters
+        bool isValid = true;
+        for (char ch : input)
+        {
+            if (!isdigit(ch)) // Check if the input contains any non-digit characters
+            {
+                isValid = false;
+                break;
+            }
+        }
+
+        // If the input is invalid or out of range (0-24), prompt the user again
+        if (!isValid || input.empty())
+        {
+            cout << "Error: Please enter a valid positive integer for hour." << endl;
+            continue;
+        }
+
+        // Convert the input to an integer
+        hour = stoi(input);
+
+        // Ensure the hour is between 0 and 24
+        if (hour < 0 || hour > 24)
+        {
+            cout << "Error: Hour must be between 0 and 24." << endl;
+        }
+        else
+        {
+            break; // Exit the loop if valid input is given
+        }
+    }
+}
+
+void getValidMinute(const string &label, int &minute)
+{
+    string input;
+    while (true)
+    {
+        cout << "\nEnter " << label << ": "; // Display the prompt
+        cin >> input;
+
+        // Check if the input contains non-numeric characters
+        bool isValid = true;
+        for (char ch : input)
+        {
+            if (!isdigit(ch)) // Check if the input contains any non-digit characters
+            {
+                isValid = false;
+                break;
+            }
+        }
+
+        // If the input is invalid or out of range (0-24), prompt the user again
+        if (!isValid || input.empty())
+        {
+            cout << "Error: Please enter a valid positive integer for hour." << endl;
+            continue;
+        }
+
+        // Convert the input to an integer
+        minute = stoi(input);
+
+        // Ensure the hour is between 0 and 24
+        if (minute < 0 || minute > 24)
+        {
+            cout << "Error: minute must be between 0 and 60." << endl;
+        }
+        else
+        {
+            break; // Exit the loop if valid input is given
+        }
+    }
+}
+
 // Function to convert a string to uppercase
 // Loops through each character in the string and converts it to uppercase.
 void toUpperCase(string &str)
