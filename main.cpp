@@ -4,57 +4,118 @@
 
 using namespace std;
 
-// base class of all user related functionality
-class User
+/*
+For Users:
+1. View a list of 4 movies, their showtimes, and ticket prices upon starting the program.
+2. Make a booking by selecting a movie first, then choosing a seat from the displayed 2D seat layout for the selected movie room.
+3. View, modify, or cancel existing bookings.
+
+For Admins:
+1. Manage movies and showtimes (add, edit, or delete movies).
+2. Configure the seat layout of movie rooms.
+*/
+
+// Base class for all cinema-related functionality
+class Cinema
 {
 public:
-    virtual void viewMovies() = 0;
-    //  virtual void book = 0;
-    //  virtual void selectSeat = 0;
-    //  virtual void makeChanges = 0;
-    virtual ~User() {}
+    virtual void viewMovies() {}
+    virtual void makeBooking() {}
+    virtual void cancelBooking() {}
+    virtual void modifiedBooking() {}
+    virtual void viewBooking() {}
+    virtual void viewSeats() {}
+    virtual void selectSeat() {}
+    virtual void manageMovieAndShowtime() {}
+    virtual void manageSeatLayout() {}
+    virtual ~Cinema() = default;
 };
 
-// base class of all admin related functionality
-class Admin : public User
+// Handles movie-related logic
+class Movies : public Cinema
 {
 public:
-    // add more virtual void if necessary :>
-    virtual void manageMovieAndShowtime() = 0;
-    virtual void manageSeatLayout() = 0;
-    // virtual void saleReport = 0;
-    virtual ~Admin() {}
-};
-
-// all movies related logic goes here
-class Movies : public Admin
-{
-public:
-    // for user
     void viewMovies() override
     {
-        cout << "viewing movies, showtime, and ticket price...\n";
-        cout << "ask user if they want to book...\n"; // make booking function
-        cout << "select seats...\n";                  // make select seat function
-        cout << "payment option...\n";
+        cout << "Viewing movies, showtime, and ticket price...\n";
+
+        // 4 movies here
     }
 
-    // for admin
     void manageMovieAndShowtime() override
     {
-        cout << "Give option on what to do (edit title, edit show time, edit ticket price)\n";
-    }
-
-    // for admin
-    void manageSeatLayout() override
-    {
-        cout << "Option to view or edit seat availability\n";
+        cout << "Managing movies and showtimes...\n";
     }
 };
 
-// all display logic goes here
-class Display : public Movies
+// Handles booking-related functionality
+class Booking : public Cinema
 {
+public:
+    void makeBooking() override
+    {
+        cout << "User is making a booking...\n";
+    }
+
+    void cancelBooking() override
+    {
+        cout << "User is canceling a booking...\n";
+    }
+
+    void viewBooking() override
+    {
+        cout << "User is viewing their booking...\n";
+    }
+
+    void modifiedBooking() override
+    {
+        cout << "User is viewing their booking...\n";
+    }
+};
+
+// Handles seat-related functionality
+class Seat : public Cinema
+{
+public:
+    void viewSeats() override
+    {
+            // 1 room palang to, dapat 4 depende sa movie room
+        vector<vector<char>> seats(10, vector<char>(10, 'A'));
+
+        for (int i = 0; i < 10; ++i)
+        {
+            for (int j = 0; j < 10; ++j)
+            {
+                cout << "[" << static_cast<char>('A' + i) << j + 1 << "]  ";
+            }
+            cout << endl;
+        }
+        cout.flush();
+    }
+    void manageSeatLayout() override
+    {
+        cout << "Managing seat layout...\n";
+    }
+
+    void selectSeat() override
+    {
+        cout << "User is selecting a seat...\n";
+    }
+};
+
+class Payment
+{
+    // Singleton or Strategy Design Pattern from GoF heree
+};
+
+// Handles display logic
+class Display : public Cinema
+{
+private:
+    Movies movies;
+    Booking booking;
+    Seat seat;
+
 public:
     void loginMenu()
     {
@@ -69,28 +130,17 @@ public:
         cout << "\nWelcome to Group 3 Cinema: Your Ultimate Movie Experience! \n"
              << "1 - View Movies\n"
              << "2 - View Seats\n"
-             << "3 - Choice 3\n"
-             << "4 - Choice 4\n"
-             << "5 - Choice 5\n"
-             << "6 - Choice 6\n"
-             << "7 - Choice 7\n"
-             << "8 - Choice 8\n"
-             << "9 - Choice 9\n"
+             << "3 - Make a Booking\n"
+             << "4 - Cancel a Booking\n"
+             << "5 - View Booking\n"
              << "0 - Exit to Login\n";
     }
 
     void adminMenu()
     {
         cout << "\nAdmin Dashboard: Manage Showtimes, Tickets, and More \n"
-             << "1 - Choice 1\n"
-             << "2 - Choice 2\n"
-             << "3 - Choice 3\n"
-             << "4 - Choice 4\n"
-             << "5 - Choice 5\n"
-             << "6 - Choice 6\n"
-             << "7 - Choice 7\n"
-             << "8 - Choice 8\n"
-             << "9 - Choice 9\n"
+             << "1 - Manage Movies and Showtimes\n"
+             << "2 - Manage Seat Layout\n"
              << "0 - Exit to Login\n";
     }
 
@@ -126,7 +176,7 @@ public:
         }
     }
 
-    // all function related to user goes here
+    // Handles user-related functionality
     void handleUserMenu()
     {
         string choice;
@@ -137,12 +187,23 @@ public:
 
             if (choice == "1")
             {
-                viewMovies();
-                cout << "User Choice 1\n";
+                movies.viewMovies();
             }
             else if (choice == "2")
             {
-                viewSeats();
+                seat.viewSeats();
+            }
+            else if (choice == "3")
+            {
+                booking.makeBooking();
+            }
+            else if (choice == "4")
+            {
+                booking.cancelBooking();
+            }
+            else if (choice == "5")
+            {
+                booking.viewBooking();
             }
             else if (choice == "0")
             {
@@ -157,7 +218,7 @@ public:
         }
     }
 
-    // all function related to admin goes here
+    // Handles admin-related functionality
     void handleAdminMenu()
     {
         string choice;
@@ -168,7 +229,11 @@ public:
 
             if (choice == "1")
             {
-                cout << "Admin Choice 1\n";
+                movies.manageMovieAndShowtime();
+            }
+            else if (choice == "2")
+            {
+                seat.manageSeatLayout();
             }
             else if (choice == "0")
             {
@@ -181,21 +246,6 @@ public:
             }
             adminMenu();
         }
-    }
-
-    void viewSeats()
-    {
-        vector<vector<char>> seats(10, vector<char>(10, 'A'));
-
-        for (int i = 0; i < 10; ++i)
-        {
-            for (int j = 0; j < 10; ++j)
-            {
-                cout << "[" << static_cast<char>('A' + i) << j + 1 << "]  ";
-            }
-            cout << endl;
-        }
-        cout.flush();
     }
 };
 
