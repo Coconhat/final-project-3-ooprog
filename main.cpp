@@ -32,20 +32,158 @@ public:
     virtual ~Cinema() = default;
 };
 
+struct Movie
+{
+    string title;
+    string showtime;
+    double price;
+};
 // Handles movie-related logic
 class Movies : public Cinema
 {
-public:
-    void viewMovies() override
-    {
-        cout << "Viewing movies, showtime, and ticket price...\n";
+private:
+    vector<Movie> movies; // Stores the list of movies
 
-        // 4 movies here
+public:
+    Movies()
+    {
+        // Constructor initialize with default movies
+        movies.push_back({"Avengers: Endgame", "3:00 PM", 300});
+        movies.push_back({"Inception", "5:30 PM", 150});
+        movies.push_back({"The Lion King", "7:00 PM", 300});
+        movies.push_back({"Joker", "9:30 PM", 250});
     }
 
-    void manageMovieAndShowtime() override
+    void viewMovies() override
     {
-        cout << "Managing movies and showtimes...\n";
+        //header for movies
+        cout << "Now Showing:\n";
+        cout << "---------------------------------------------\n";
+        cout << setw(5) << left << "No."
+             << setw(25) << "Movie Title"
+             << setw(15) << "Showtime"
+             << setw(10) << "Price\n";
+        cout << "---------------------------------------------\n";
+
+
+        for (size_t i = 0; i < movies.size(); ++i)
+        {
+            cout << setw(5) << i + 19
+                 << setw(25) << movies[i].title
+                 << setw(15) << movies[i].showtime
+                 << setw(10) << movies[i].price << "\n";
+        }
+        cout << "---------------------------------------------\n";
+    }
+
+       void manageMovieAndShowtime() override
+    {
+        string choice;
+        while (choice != "0")
+        {
+            cout << "\nMovie Management:\n"
+                 << "1 - Add Movie\n"
+                 << "2 - Edit Movie\n"
+                 << "3 - Delete Movie\n"
+                 << "0 - Exit Movie Management\n";
+            cout << "Enter choice: ";
+            cin >> choice;
+
+            if (choice == "1")
+            {
+                addMovie();
+            }
+            else if (choice == "2")
+            {
+                editMovie();
+            }
+            else if (choice == "3")
+            {
+                deleteMovie();
+            }
+            else if (choice == "0")
+            {
+                cout << "Exiting Movie Management...\n";
+                break;
+            }
+            else
+            {
+                cout << "Invalid choice. Please try again.\n";
+            }
+        }
+    }
+
+private:
+    void addMovie()
+    {
+        string title;
+        string showtime;
+        double price;
+
+        cout << "Enter movie title: ";
+        cin.ignore();
+        getline(cin, title);
+
+        cout << "Enter showtime: ";
+        getline(cin, showtime);
+
+        getValidPrice("price",price );
+
+        movies.push_back({title, showtime, price});
+        cout << "Movie added successfully!\n";
+    }
+
+    void editMovie()
+    {
+        viewMovies();
+        int index;
+        cout << "Movie index to edit\n";
+        getValidQuantity("index", index);
+
+        if (index < 1 || index > movies.size())
+        {
+            cout << "Invalid movie number!\n";
+            return;
+        }
+
+        string title;
+        string showtime;
+        double price;
+
+        cout << "Enter new title (leave blank to keep current): ";
+        cin.ignore();
+        getline(cin, title);
+
+        cout << "Enter new showtime (leave blank to keep current): ";
+        getline(cin, showtime);
+        
+        cout << "Enter new price: ";
+        getValidPrice("price", price);
+      
+
+        if (!title.empty())
+            movies[index - 1].title = title;
+        if (!showtime.empty())
+            movies[index - 1].showtime = showtime;
+
+        cout << "Movie updated successfully!\n";
+    }
+
+    void deleteMovie()
+    {
+        viewMovies();
+        int index;
+        cout << "Movie index to edit\n";
+        getValidQuantity("index", index);
+
+        if (index < 1 || index > movies.size())
+        {
+            cout << "Invalid movie number!\n";
+            return;
+        }
+
+        movies.erase(movies.begin() + index - 1);
+        cout << "Movie deleted successfully!\n";
     }
 };
 
@@ -80,7 +218,7 @@ class Seat : public Cinema
 public:
     void viewSeats() override
     {
-            // 1 room palang to, dapat 4 depende sa movie room
+        // 1 room palang to, dapat 4 depende sa movie room
         vector<vector<char>> seats(10, vector<char>(10, 'A'));
 
         for (int i = 0; i < 10; ++i)
