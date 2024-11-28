@@ -1,7 +1,6 @@
 #include <iostream>
 using namespace std;
 
-
 // Function to check if a string represents a valid number
 // This function ensures the input is a valid numeric value with at most one decimal point.
 bool isValidNum(const string &input)
@@ -103,7 +102,7 @@ void getValidQuantity(const string &label, int &amount)
     }
 }
 
-void getValidHour(const string &label, int &hour)
+void getValidRoom(const string &label, int &given)
 {
     string input;
     while (true)
@@ -130,12 +129,12 @@ void getValidHour(const string &label, int &hour)
         }
 
         // Convert the input to an integer
-        hour = stoi(input);
+        given = stoi(input);
 
         // Ensure the hour is between 0 and 24
-        if (hour < 0 || hour > 24)
+        if (given < 1 || given > 4)
         {
-            cout << "Error: Hour must be between 0 and 24." << endl;
+            cout << "Error: " << label << " must be between " << 1 << " and " << 4 << endl;
         }
         else
         {
@@ -144,13 +143,19 @@ void getValidHour(const string &label, int &hour)
     }
 }
 
-void getValidMinute(const string &label, int &minute)
+void getValidInput(const string &label, int &given, int min, int max, bool allowBlank = false)
 {
     string input;
     while (true)
     {
-        cout << "\nEnter " << label << ": "; // Display the prompt
-        cin >> input;
+        cout << "\nEnter " << label << (allowBlank ? " (leave blank to keep current): " : ": ");
+        getline(cin, input);
+
+        if (allowBlank && input.empty())
+        {
+            
+            return;
+        }
 
         // Check if the input contains non-numeric characters
         bool isValid = true;
@@ -163,20 +168,20 @@ void getValidMinute(const string &label, int &minute)
             }
         }
 
-        // If the input is invalid or out of range (0-24), prompt the user again
+        // If the input is invalid, prompt the user again
         if (!isValid || input.empty())
         {
-            cout << "Error: Please enter a valid positive integer for hour." << endl;
+            cout << "Error: Please enter a valid positive integer for " << label << "." << endl;
             continue;
         }
 
         // Convert the input to an integer
-        minute = stoi(input);
+        given = stoi(input);
 
-        // Ensure the hour is between 0 and 24
-        if (minute < 0 || minute > 24)
+        // Ensure the input is within range
+        if (given < min || given > max)
         {
-            cout << "Error: minute must be between 0 and 60." << endl;
+            cout << "Error: " << label << " must be between " << min << " and " << max << "." << endl;
         }
         else
         {

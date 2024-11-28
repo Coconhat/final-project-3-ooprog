@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <map>
 #include "inputValidation.cpp" //validation function included here
 
 using namespace std;
@@ -36,47 +37,70 @@ struct Movie
 {
     string title;
     string showtime;
+    string until;
     double price;
 };
-// Handles movie-related logic
-class Movies : public Cinema
+
+class Movies
 {
 private:
-    vector<Movie> movies; // Stores the list of movies
+    map<int, vector<Movie>> rooms;
 
 public:
     Movies()
     {
-        // Constructor initialize with default movies
-        movies.push_back({"Avengers: Endgame", "3:00", 300});
-        movies.push_back({"Inception", "5:30", 150});
-        movies.push_back({"The Lion King", "7:00", 300});
-        movies.push_back({"Joker", "9:30", 250});
+        // Initialize rooms with default movies
+        rooms[1].push_back({"Avengers: Endgame", "03:00", "05:15", 300});
+        rooms[2].push_back({"Inception", "05:30", "07:30", 150});
+        rooms[3].push_back({"The Lion King", "15:00", "17:15", 300});
+        rooms[4].push_back({"Joker", "09:30", "11:45", 250});
     }
 
-    void viewMovies() override
+    void viewMovies()
     {
-        // Header for the movie list
-        cout << "\nNow Showing:\n";
         cout << "----------------------------------------------------------\n";
-        cout << setw(10) << left << "Theater"
+        cout << setw(10) << left << "Room"
              << setw(25) << "Movie Title"
              << setw(20) << "Showtime"
+             << setw(15) << "Until"
              << setw(15) << "Ticket Price\n";
         cout << "----------------------------------------------------------\n";
 
-        for (int i = 0; i < movies.size(); ++i)
+        int previousRoom = -1; // To track the previous room number
+
+        for (const auto &room : rooms)
         {
-            cout << setw(10) << left << to_string(i + 1)
-                 << setw(25) << movies[i].title
-                 << setw(20) << movies[i].showtime
-                 << setw(15) << fixed << setprecision(2) << movies[i].price << "\n";
+            // Check if the room number has changed
+            if (room.first != previousRoom && previousRoom != -1)
+            {
+                cout << "\n"; // Add extra newline when the room changes
+            }
+
+            for (const auto &movie : room.second)
+            {
+                // Print room number only once per room
+                if (room.first != previousRoom)
+                {
+                    cout << setw(10) << left << to_string(room.first); // Print room number
+                }
+                else
+                {
+                    cout << setw(10) << ""; // Empty space if the room number is the same
+                }
+
+                cout << setw(25) << movie.title
+                     << setw(20) << movie.showtime
+                     << setw(15) << movie.until
+                     << setw(15) << fixed << setprecision(2) << movie.price << "\n";
+            }
+
+            previousRoom = room.first; // Update previousRoom to current room
         }
 
         cout << "----------------------------------------------------------\n";
     }
 
-    void manageMovieAndShowtime() override
+    void manageMovieAndShowtime()
     {
         string choice;
         while (choice != "0")
@@ -116,80 +140,158 @@ public:
 private:
     void addMovie()
     {
+        int room;
+        cout << "Enter room number (1-4): ";
+        getValidRoom("room", room);
+
         string title;
         string showtime;
-        int hour;
-        int minute;
+        string until;
         double price;
 
         cout << "Enter movie title: ";
         cin.ignore();
         getline(cin, title);
 
-        cout << "Enter Date time: \n";
-        getValidHour("Hour", hour);
-        getValidMinute("Minute", minute);
+        int hour, minute;
+        int untilHour, untilMinute;
 
-        stringstream ss;
+        // Ask for showtime
+        cout << "Enter Showtime (hour and minute):\n";
+        getValidInput("Hour", hour, 0, 24);
+        getValidInput("Minute", minute, 0, 60);
+
+        // Ask for until time
+        cout << "Enter Until time (hour and minute):\n";
+        getValidInput("Hour", untilHour, 0, 24);
+        getValidInput("Minute", untilMinute, 0, 60);
+
+        // Format the times as strings
+        stringstream ss, ff;
         ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
-        showtime = ss.str(); // combine valid hour and minute and assign to showtime
+        showtime = ss.str();
+
+        ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
+        until = ff.str();
 
         getValidPrice("price", price);
 
-        movies.push_back({title, showtime, price});
-        cout << "Movie added successfully!\n";
+        // Add movie to the selected room
+        rooms[room].push_back({title, showtime, until, price});
+        cout << "Movie added successfully to Room " << room << "!\n";
     }
 
     void editMovie()
     {
-        viewMovies();
+        int room;
+        cout << "Enter room number (1-4): ";
+        getValidRoom("room", room);
+
+        if (rooms.find(room) == rooms.end() || rooms[room].empty())
+        {
+            cout << "No movies found in Room " << room << "!\n";
+            return;
+        }
+
+        viewMoviesInRoom(room);
+
         int index;
-        cout << "Movie index to edit\n";
+        cout << "Enter movie index to edit: ";
         getValidQuantity("index", index);
 
-        if (index < 1 || index > movies.size())
+        if (index < 1 || index > rooms[room].size())
         {
-            cout << "Invalid movie number!\n";
+            cout << "Invalid movie index!\n";
             return;
         }
 
         string title;
         string showtime;
+        string until;
         double price;
+
+        int hour, minute;
+        int untilHour, untilMinute;
 
         cout << "Enter new title (leave blank to keep current): ";
         cin.ignore();
         getline(cin, title);
 
-        cout << "Enter new showtime (leave blank to keep current): ";
-        getline(cin, showtime);
+        cout << "Enter new showtime (leave blank to keep current):\n";
+        getValidInput("hour", hour, 0, 24, true);
+        getValidInput("minute", minute, 0, 60, true);
 
-        cout << "Enter new price: ";
+        cout << "Enter new until time (leave blank to keep current):\n";
+        getValidInput("hour", untilHour, 0, 24, true);
+        getValidInput("minute", untilMinute, 0, 60, true);
+
+        cout << "Enter new price (leave blank to keep current): ";
         getValidPrice("price", price);
 
+        // Update the movie fields if they're not empty
         if (!title.empty())
-            movies[index - 1].title = title;
-        if (!showtime.empty())
-            movies[index - 1].showtime = showtime;
+            rooms[room][index - 1].title = title;
 
-        cout << "Movie updated successfully!\n";
+        stringstream ss, ff;
+        ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
+        rooms[room][index - 1].showtime = ss.str();
+
+        ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
+        rooms[room][index - 1].until = ff.str();
+
+        if (price > 0)
+            rooms[room][index - 1].price = price;
+
+        cout << "Movie updated successfully in Room " << room << "!\n";
     }
 
     void deleteMovie()
     {
-        viewMovies();
-        int index;
-        cout << "Movie index to edit\n";
-        getValidQuantity("index", index);
+        int room;
+        cout << "Enter room number (1-4): ";
+        getValidQuantity("room", room);
 
-        if (index < 1 || index > movies.size())
+        if (rooms.find(room) == rooms.end() || rooms[room].empty())
         {
-            cout << "Invalid movie number!\n";
+            cout << "No movies found in Room " << room << "!\n";
             return;
         }
-        cout << "Movie \"" << movies[index - 1].title << "\" deleted successfully!\n";
 
-        movies.erase(movies.begin() + index - 1);
+        viewMoviesInRoom(room);
+
+        int index;
+        cout << "Enter movie index to delete: ";
+        getValidQuantity("index", index);
+
+        if (index < 1 || index > rooms[room].size())
+        {
+            cout << "Invalid movie index!\n";
+            return;
+        }
+
+        cout << "Movie \"" << rooms[room][index - 1].title << "\" deleted successfully from Room " << room << "!\n";
+        rooms[room].erase(rooms[room].begin() + index - 1);
+    }
+
+    void viewMoviesInRoom(int room)
+    {
+        cout << "\nMovies in Room " << room << ":\n";
+        cout << "----------------------------------------------------------\n";
+        cout << setw(10) << left << "Index"
+             << setw(25) << "Movie Title"
+             << setw(20) << "Showtime"
+             << setw(15) << "Ticket Price\n";
+        cout << "----------------------------------------------------------\n";
+
+        for (int i = 0; i < rooms[room].size(); ++i)
+        {
+            cout << setw(10) << left << to_string(i + 1)
+                 << setw(25) << rooms[room][i].title
+                 << setw(20) << rooms[room][i].showtime
+                 << setw(15) << fixed << setprecision(2) << rooms[room][i].price << "\n";
+        }
+
+        cout << "----------------------------------------------------------\n";
     }
 };
 
@@ -224,18 +326,26 @@ class Seat : public Cinema
 public:
     void viewSeats() override
     {
-        // 1 room palang to, dapat 4 depende sa movie room
-        vector<vector<char>> seats(10, vector<char>(10, 'A'));
+        string index;
 
-        for (int i = 0; i < 10; ++i)
+        cout << "Enter theater index to view their seats: ";
+        cin >> index;
+        // 1 room palang to, dapat 4 depende sa movie room
+        if (index == "1")
         {
-            for (int j = 0; j < 10; ++j)
+
+            vector<vector<char>> seats(10, vector<char>(10, 'A'));
+
+            for (int i = 0; i < 10; ++i)
             {
-                cout << "[" << static_cast<char>('A' + i) << j + 1 << "]  ";
+                for (int j = 0; j < 10; ++j)
+                {
+                    cout << "[" << static_cast<char>('A' + i) << j + 1 << "]  ";
+                }
+                cout << endl;
             }
-            cout << endl;
+            cout.flush();
         }
-        cout.flush();
     }
     void manageSeatLayout() override
     {
@@ -283,6 +393,7 @@ public:
 
     void adminMenu()
     {
+        // add user functionality here too :>
         cout << "\nAdmin Dashboard: Manage Showtimes, Tickets, and More \n"
              << "1 - Manage Movies and Showtimes\n"
              << "2 - Manage Seat Layout\n"

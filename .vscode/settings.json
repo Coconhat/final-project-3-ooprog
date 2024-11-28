@@ -4,6 +4,7 @@
     "iostream": "cpp",
     "ostream": "cpp",
     "*.tcc": "cpp",
-    "iomanip": "cpp"
+    "iomanip": "cpp",
+    "sstream": "cpp"
   }
 }
