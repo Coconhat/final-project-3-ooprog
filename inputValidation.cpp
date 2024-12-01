@@ -30,13 +30,19 @@ bool isValidNum(const string &input)
 
 // Function to get a valid price from the user
 // Prompts the user until a valid positive price is entered.
-void getValidPrice(const string &label, double &amount)
+void getValidPrice(const string &label, double &amount, bool allowBlank = false)
 {
     string input;
     while (true)
     {
         cout << "\nEnter " << label << ": "; // Display the prompt
         cin >> input;
+
+        if (allowBlank && input.empty())
+        {
+
+            return;
+        }
 
         // Check if the input is a valid number
         if (isValidNum(input))
@@ -124,7 +130,7 @@ void getValidRoom(const string &label, int &given)
         // If the input is invalid or out of range (0-24), prompt the user again
         if (!isValid || input.empty())
         {
-            cout << "Error: Please enter a valid positive integer for hour." << endl;
+            cout << "Error: Please enter a valid positive integer." << endl;
             continue;
         }
 
@@ -148,12 +154,12 @@ void getValidInput(const string &label, int &given, int min, int max, bool allow
     string input;
     while (true)
     {
-        cout << "\nEnter " << label << (allowBlank ? " (leave blank to keep current): " : ": ");
+        cout << "Enter " << label << (allowBlank ? " (leave blank to keep current): " : ": ");
         getline(cin, input);
 
         if (allowBlank && input.empty())
         {
-            
+
             return;
         }
 

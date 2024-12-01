@@ -14,6 +14,7 @@ For Users:
 
 For Admins:
 1. Manage movies and showtimes (add, edit, or delete movies).
+2. EACH ROOM CAN SHOW MAXIMUM OF 2 MOVIES FOR A DAY. EX(ROOM 1 CAN SHOW movie a from 8-10 and movie b from 2-5)
 2. Configure the seat layout of movie rooms.
 */
 
@@ -44,9 +45,9 @@ struct Movie
 class Movies
 {
 private:
+public:
     map<int, vector<Movie>> rooms;
 
-public:
     Movies()
     {
         // Initialize rooms with default movies
@@ -144,29 +145,61 @@ private:
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
+        // Check if room already has 2 movies
+        if (rooms[room].size() >= 2)
+        {
+            cout << "Room " << room << " has reached its movie limit (2 movies maximum).\n";
+            return;
+        }
+
         string title;
         string showtime;
         string until;
         double price;
 
-        cout << "Enter movie title: ";
+        cout << "\nEnter movie title: ";
         cin.ignore();
         getline(cin, title);
 
-        int hour, minute;
-        int untilHour, untilMinute;
+        int hour, minute, untilHour, untilMinute;
 
         // Ask for showtime
         cout << "Enter Showtime (hour and minute):\n";
-        getValidInput("Hour", hour, 0, 24);
-        getValidInput("Minute", minute, 0, 60);
+        getValidInput("Hour", hour, 0, 23);
+        getValidInput("Minute", minute, 0, 59);
 
         // Ask for until time
-        cout << "Enter Until time (hour and minute):\n";
-        getValidInput("Hour", untilHour, 0, 24);
-        getValidInput("Minute", untilMinute, 0, 60);
+        cout << "\nEnter Until time (hour and minute):\n";
+        getValidInput("Hour", untilHour, 0, 23);
+        getValidInput("Minute", untilMinute, 0, 59);
 
-        // Format the times as strings
+        // Convert to total minutes since midnight
+        int startTime = hour * 60 + minute;
+        int endTime = untilHour * 60 + untilMinute;
+
+        // Validate time until time for next moviezxs
+        if (endTime <= startTime)
+        {
+            cout << "Invalid schedule: 'Until' time must be after 'Showtime'.\n";
+            return;
+        }
+
+        // Check for conflicts with existing movies in the room
+        for (const auto &movie : rooms[room])
+        {
+            int existingStartTime = stoi(movie.showtime.substr(0, 2)) * 60 + stoi(movie.showtime.substr(3, 2));
+            int existingEndTime = stoi(movie.until.substr(0, 2)) * 60 + stoi(movie.until.substr(3, 2));
+
+            if ((startTime >= existingStartTime && startTime < existingEndTime) ||
+                (endTime > existingStartTime && endTime <= existingEndTime) ||
+                (startTime <= existingStartTime && endTime >= existingEndTime))
+            {
+                cout << "Schedule conflict detected with movie \"" << movie.title << "\".\n";
+                return;
+            }
+        }
+
+        // Format times as strings
         stringstream ss, ff;
         ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
         showtime = ss.str();
@@ -217,20 +250,25 @@ private:
         cin.ignore();
         getline(cin, title);
 
-        cout << "Enter new showtime (leave blank to keep current):\n";
+        cout << "\nEnter new showtime:\n";
         getValidInput("hour", hour, 0, 24, true);
         getValidInput("minute", minute, 0, 60, true);
 
-        cout << "Enter new until time (leave blank to keep current):\n";
+        cout << "\nEnter new until time:\n";
         getValidInput("hour", untilHour, 0, 24, true);
         getValidInput("minute", untilMinute, 0, 60, true);
 
-        cout << "Enter new price (leave blank to keep current): ";
         getValidPrice("price", price);
 
         // Update the movie fields if they're not empty
         if (!title.empty())
             rooms[room][index - 1].title = title;
+
+        if (!showtime.empty())
+            rooms[room][index - 1].showtime = showtime;
+
+        if (!until.empty())
+            rooms[room][index - 1].until = until;
 
         stringstream ss, ff;
         ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
@@ -298,25 +336,92 @@ private:
 // Handles booking-related functionality
 class Booking : public Cinema
 {
+private:
+    Movies movies;
+    map<int, vector<string>> bookedSeats;
+
+    struct BookingInfo
+    {
+        string movieTitle;
+        int room;
+        vector<string> seats;
+        int ticketCount;
+        double totalPrice;
+        string date;
+    };
+    vector<BookingInfo> userBookings;
+
 public:
     void makeBooking() override
     {
-        cout << "User is making a booking...\n";
+        int roomChoice;
+
+        cout << "Available Movies:\n";
+        movies.viewMovies();
+
+        cout << "\nPlease enter the room number of your movie choice: ";
+        getValidRoom("room number", roomChoice);
+
+        if (movies.rooms.find(roomChoice) == movies.rooms.end() || movies.rooms[roomChoice].empty())
+        {
+            cout << "Invalid room selection or no movies available in this room.\n";
+            return;
+        }
+
+        if (movies.rooms[roomChoice].size() > 1)
+        {
+            cout << "Enter the number of your movie: ";
+            for (int i = 0; i < movies.rooms[roomChoice].size(); i++)
+            {
+                cout << i + 1 << " - " << movies.rooms[roomChoice][i].title << " (" << movies.rooms[roomChoice][i].showtime << ")\n";
+            }
+            int index;
+            getValidInput("movie index", index, 1, movies.rooms[roomChoice].size());
+
+            cout << "yey";
+        }
+
+        // if 2 movies prompt the user to enter 1 for movie a and 2 for movie b
+
+        // show ticket price and ask for how many ticket
+
+        // ask for date
+
+        // get seat layout function
+
+        // payment function
+
+        // confirmation
     }
 
     void cancelBooking() override
     {
         cout << "User is canceling a booking...\n";
+        // view booking function
+
+        // ask the user which booking they want to cancel
+
+        // confirm cancel and update the seat layout
     }
 
     void viewBooking() override
     {
         cout << "User is viewing their booking...\n";
+
+        // show booking
     }
 
     void modifiedBooking() override
     {
         cout << "User is viewing their booking...\n";
+
+        // show view booking function
+
+        // ask what they booking they want to modified
+
+        // modify what? ticket or seat
+
+        //..
     }
 };
 
@@ -354,8 +459,8 @@ public:
 
     void selectSeat() override
     {
-        cout << "User is selecting a seat...\n";
-    }
+        cout << "Please select your seats (e.g A1, B2): ";
+    };
 };
 
 class Payment
