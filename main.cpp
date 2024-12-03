@@ -42,6 +42,59 @@ struct Movie
     double price;
 };
 
+class Showtime
+{
+public:
+    void getSchedule(int room, int &hour, int &minute, int &untilHour, int &untilMinute, map<int, vector<Movie>> &rooms, string &showtime, string &until)
+    {
+        // Ask for showtime
+        cout << "Enter Showtime (hour and minute):\n";
+        getValidInput("Hour", hour, 0, 23);
+        getValidInput("Minute", minute, 0, 59);
+
+        // Convert to total minutes since midnight
+        int startTime = hour * 60 + minute;
+
+        // Ask for until time
+        cout << "\nEnter Until time (hour and minute):\n";
+        getValidInput("Hour", untilHour, 0, 23);
+        getValidInput("Minute", untilMinute, 0, 59);
+
+        // Convert until time to total minutes
+        int endTime = untilHour * 60 + untilMinute;
+
+        // Validate time until time for next movie
+        if (endTime <= startTime)
+        {
+            cout << "Invalid schedule: 'Until' time must be after 'Showtime'.\n";
+            return; // Exit the function early if the "until time" is not valid
+        }
+
+        // Check for conflicts with existing movies in the room
+        for (const auto &movie : rooms[room])
+        {
+            int existingStartTime = stoi(movie.showtime.substr(0, 2)) * 60 + stoi(movie.showtime.substr(3, 2));
+            int existingEndTime = stoi(movie.until.substr(0, 2)) * 60 + stoi(movie.until.substr(3, 2));
+
+            if ((startTime >= existingStartTime && startTime < existingEndTime) ||
+                (endTime > existingStartTime && endTime <= existingEndTime) ||
+                (startTime <= existingStartTime && endTime >= existingEndTime))
+            {
+                cout << "Schedule conflict detected with movie \"" << movie.title << "\".\n";
+                return; // Exit the function early if there's a conflict
+            }
+        }
+
+        // Format times as strings
+        stringstream ss, ff;
+        ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
+        showtime = ss.str();
+
+        ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
+        until = ff.str();
+    }
+};
+
 class Movies
 {
 private:
@@ -166,50 +219,16 @@ private:
         int hour, minute, untilHour, untilMinute;
 
         // Ask for showtime
-        cout << "Enter Showtime (hour and minute):\n";
-        getValidInput("Hour", hour, 0, 23);
-        getValidInput("Minute", minute, 0, 59);
+        Showtime show;
+        show.getSchedule(room, hour, minute, untilHour, untilMinute, rooms, showtime, until);
 
-        //validate here too
-
-        // Ask for until time
-        cout << "\nEnter Until time (hour and minute):\n";
-        getValidInput("Hour", untilHour, 0, 23);
-        getValidInput("Minute", untilMinute, 0, 59);
-
-        // Convert to total minutes since midnight
-        int startTime = hour * 60 + minute;
-        int endTime = untilHour * 60 + untilMinute;
-
-        // Validate time until time for next moviezxs
-        if (endTime <= startTime)
+        if (showtime.empty() || until.empty()) // Showtimes should only be set if valid
         {
-            cout << "Invalid schedule: 'Until' time must be after 'Showtime'.\n";
-            return;
+            cout << "Movie not added due to invalid schedule.\n";
+            return; // Don't proceed with adding the movie
         }
 
-        // Check for conflicts with existing movies in the room
-        for (const auto &movie : rooms[room])
-        {
-            int existingStartTime = stoi(movie.showtime.substr(0, 2)) * 60 + stoi(movie.showtime.substr(3, 2));
-            int existingEndTime = stoi(movie.until.substr(0, 2)) * 60 + stoi(movie.until.substr(3, 2));
-
-            if ((startTime >= existingStartTime && startTime < existingEndTime) ||
-                (endTime > existingStartTime && endTime <= existingEndTime) ||
-                (startTime <= existingStartTime && endTime >= existingEndTime))
-            {
-                cout << "Schedule conflict detected with movie \"" << movie.title << "\".\n";
-                return;
-            }
-        }
-
-        // Format times as strings
-        stringstream ss, ff;
-        ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
-        showtime = ss.str();
-
-        ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
-        until = ff.str();
+    
 
         getValidPrice("price", price);
 
