@@ -71,6 +71,7 @@ class TicketManager
 {
     virtual double calculateTicket(int ticket, int quantity) = 0;
 };
+
 class Showtime : public ShowtimeManager
 {
 public:
@@ -124,13 +125,13 @@ public:
     }
 };
 
-class Ticket
+class Ticket : public TicketManager
 {
-
+private:
 public:
-    double calculateTicket(int ticket, int quantity)
+    double calculateTotalPrice(int ticketCount, int price) const
     {
-        return ticket * quantity;
+        return ticketCount * price;
     }
 };
 
@@ -157,22 +158,22 @@ public:
              << setw(15) << "Ticket Price\n";
         cout << "----------------------------------------------------------\n";
 
-        int previousRoom = -1; 
+        int previousRoom = -1;
 
         for (const auto &room : rooms)
         {
             // Check if the room number has changed
             if (room.first != previousRoom && previousRoom != -1)
             {
-                cout << "\n"; 
+                cout << "\n";
             }
 
-            for (const auto &movie : room.second) 
+            for (const auto &movie : room.second)
             {
-                
+
                 if (room.first != previousRoom)
                 {
-                    cout << setw(10) << left << to_string(room.first); 
+                    cout << setw(10) << left << to_string(room.first);
                 }
                 else
                 {
@@ -185,7 +186,7 @@ public:
                      << setw(15) << fixed << setprecision(2) << movie.price << "\n";
             }
 
-            previousRoom = room.first; 
+            previousRoom = room.first;
         }
 
         cout << "----------------------------------------------------------\n";
@@ -236,7 +237,6 @@ private:
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
-        
         if (rooms[room].size() >= maxRoom)
         {
             cout << "Room " << room << " already has 2 movies in it.\n";
@@ -258,10 +258,10 @@ private:
         Showtime show;
         show.getSchedule(room, hour, minute, untilHour, untilMinute, rooms, showtime, until);
 
-        if (showtime.empty() || until.empty()) 
+        if (showtime.empty() || until.empty())
         {
             cout << "Movie not added due to invalid schedule.\n";
-            return; 
+            return;
         }
 
         getValidPrice("price", price);
@@ -407,7 +407,6 @@ public:
                 for (int col = 1; col <= 10; ++col)
                 {
                     string seatId = string(1, row) + to_string(col);
-                    // Only initialize if the seat doesn't exist
                     if (roomBookedSeats[room].find(seatId) == roomBookedSeats[room].end())
                     {
                         roomBookedSeats[room][seatId] = false;
@@ -459,7 +458,7 @@ public:
         // Print seat layout
         for (int i = 0; i < 10; ++i)
         {
-           
+
             char rowLetter = 'A' + i;
             cout << rowLetter << "   ";
 
@@ -468,12 +467,11 @@ public:
                 // Create seat identifier
                 string seatId = string(1, rowLetter) + to_string(j);
 
-               
                 bool isBooked = roomBookedSeats[roomIndex][seatId];
 
                 if (isBooked)
                 {
-                    cout << setw(6) << "X"; 
+                    cout << setw(6) << "X";
                 }
                 else
                 {
@@ -513,7 +511,7 @@ public:
 
         while (selectedSeats.size() < ticketCount)
         {
-           
+
             viewRoomSeats(roomIndex);
 
             string selectedSeat;
@@ -525,46 +523,54 @@ public:
                      << " of " << ticketCount << " (e.g., A1, B2): ";
                 cin >> selectedSeat;
 
-                
                 if (!isValidSeat(selectedSeat))
                 {
                     cout << "Invalid seat format. Please use format like A1, B2.\n";
                     continue;
                 }
 
-         
                 if (roomBookedSeats[roomIndex][selectedSeat])
                 {
                     cout << "Seat " << selectedSeat << " is already booked. Please choose another seat.\n";
                     continue;
                 }
 
-                
                 if (find(selectedSeats.begin(), selectedSeats.end(), selectedSeat) != selectedSeats.end())
                 {
                     cout << "You have already selected seat " << selectedSeat << ". Choose a different seat.\n";
                     continue;
                 }
 
-               
                 selectedSeats.push_back(selectedSeat);
                 validSelection = true;
             }
 
-            
-            if (ticketCount > 1)
+            while (ticketCount > 1)
             {
-                char confirm;
+                string confirm;
                 cout << "Seat " << selectedSeat << " selected. Continue selecting? (y/n): ";
                 cin >> confirm;
-                if (tolower(confirm) != 'y')
+                toUpperCase(confirm);
+
+                if (confirm == "Y")
+                {
+                    cout << "Continuing selection..." << endl;
                     break;
+                }
+                else if (confirm == "N")
+                {
+                    cout << "Stopping selection." << endl;
+                    break;
+                }
+                else
+                {
+                    cout << "Invalid input. Please enter 'y' or 'n'." << endl;
+                }
             }
         }
 
         return selectedSeats;
     }
-
 
     void bookSeats(int roomIndex, const vector<string> &seats)
     {
@@ -604,7 +610,6 @@ public:
     void makeBooking() override
     {
         int roomChoice, ticketCount;
-        double pricePerTicket = 12.50; //sample ticket price
 
         cout << "Available Movies:\n";
         movies.viewMovies();
@@ -640,8 +645,7 @@ public:
         getValidQuantity("ticket count", ticketCount);
 
         // Calculate total price
-        double totalPrice = ticketCount * pricePerTicket; // put this sa ticket class methods
-        cout << "\nTotal price for " << ticketCount << " tickets: $" << totalPrice << endl;
+        double totalPrice = selectedMovie.price * ticketCount;
 
         // Select seats
         vector<string> selectedSeats = seatManager.selectSeats(roomChoice, ticketCount);
@@ -658,38 +662,52 @@ public:
         cin >> bookingDate;
 
         // Confirm booking
-        char confirm;
-        cout << "Confirm booking? (y/n): ";
-        cin >> confirm;
-
-        if (tolower(confirm) == 'y')
+        bool validInput = false;
+        while (!validInput)
         {
-            // Create booking record
-            BookingInfo newBooking;
-            newBooking.movieTitle = selectedMovie.title;
-            newBooking.room = roomChoice;
-            newBooking.seats = selectedSeats;
-            newBooking.ticketCount = ticketCount;
-            newBooking.totalPrice = totalPrice;
-            newBooking.date = bookingDate;
+            string confirm;
+            cout << "Confirm booking? (y/n): ";
+            cin >> confirm;
+            toUpperCase(confirm);
 
-            userBookings.push_back(newBooking);
+            // Convert input to lowercase for easy comparison
+            if ((confirm) == "Y")
+            {
+                // Create booking record
+                BookingInfo newBooking;
+                newBooking.movieTitle = selectedMovie.title;
+                newBooking.room = roomChoice;
+                newBooking.seats = selectedSeats;
+                newBooking.ticketCount = ticketCount;
+                newBooking.totalPrice = totalPrice;
+                newBooking.date = bookingDate;
 
-            // Mark seats as booked
-            seatManager.bookSeats(roomChoice, selectedSeats);
+                userBookings.push_back(newBooking);
 
-            cout << "Booking confirmed!\n";
-            cout << "Movie: " << newBooking.movieTitle << endl;
-            cout << "Room: " << newBooking.room << endl;
-            cout << "Seats: ";
-            for (const auto &seat : selectedSeats)
-                cout << seat << " ";
-            cout << endl;
-            cout << "Total Price: $" << totalPrice << endl;
-        }
-        else
-        {
-            cout << "Booking cancelled.\n";
+                // Mark seats as booked
+                seatManager.bookSeats(roomChoice, selectedSeats);
+
+                cout << "Booking confirmed!\n";
+                cout << "Movie: " << newBooking.movieTitle << endl;
+                cout << "Room: " << newBooking.room << endl;
+                cout << "Seats: ";
+                for (const auto &seat : selectedSeats)
+                    cout << seat << " ";
+                cout << endl;
+                cout << "Total Price: PHP" << totalPrice << endl;
+
+                cout << "Booking confirmed!" << endl;
+                validInput = true;
+            }
+            else if ((confirm) == "N")
+            {
+                cout << "Booking canceled." << endl;
+                validInput = true;
+            }
+            else
+            {
+                cout << "Invalid input. Please enter 'y' for yes or 'n' for no." << endl;
+            }
         }
     }
 
