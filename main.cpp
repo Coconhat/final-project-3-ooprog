@@ -37,8 +37,6 @@ struct Movie
 class Cinema
 {
 public:
-    map<int, vector<Movie>> rooms;
-
     virtual void viewMovies() = 0;
     virtual void manageMovieAndShowtime() = 0;
     virtual ~Cinema() = default;
@@ -138,13 +136,18 @@ public:
 class Movies : public Cinema
 {
 public:
+    static map<int, vector<Movie>> rooms;
     Movies()
     {
-        // Initialize rooms with default movies
-        rooms[1].push_back({"Avengers: Endgame", "03:00", "05:15", 300});
-        rooms[2].push_back({"Inception", "05:30", "07:30", 150});
-        rooms[3].push_back({"The Lion King", "15:00", "17:15", 300});
-        rooms[4].push_back({"Joker", "09:30", "11:45", 250});
+        static bool isInitialized = false;
+        if (!isInitialized)
+        {
+            rooms[1].push_back({"Avengers: Endgame", "03:00", "05:15", 300});
+            rooms[2].push_back({"Inception", "05:30", "07:30", 150});
+            rooms[3].push_back({"The Lion King", "15:00", "17:15", 300});
+            rooms[4].push_back({"Joker", "09:30", "11:45", 250});
+            isInitialized = true;
+        }
     }
 
     void viewMovies() override
@@ -389,6 +392,7 @@ private:
         cout << "----------------------------------------------------------\n";
     }
 };
+map<int, vector<Movie>> Movies::rooms;
 
 // Handles booking-related functionality
 class Seat : public SeatManager
@@ -626,13 +630,19 @@ public:
         Movie selectedMovie;
         if (movies.rooms[roomChoice].size() > 1)
         {
-            cout << "Enter the number of your movie: ";
+            cout << "Enter the number of your movie: \n";
             for (int i = 0; i < movies.rooms[roomChoice].size(); i++)
             {
                 cout << i + 1 << " - " << movies.rooms[roomChoice][i].title << " (" << movies.rooms[roomChoice][i].showtime << ")\n";
             }
             int index;
-            getValidInput("movie index", index, 1, movies.rooms[roomChoice].size());
+
+            do
+            {
+                cout << "\nEnter movie index (1 or 2): ";
+                getValidQuantity("movie index", index);
+            } while (index < 1 || index > movies.rooms[roomChoice].size());
+
             selectedMovie = movies.rooms[roomChoice][index - 1];
         }
         else
