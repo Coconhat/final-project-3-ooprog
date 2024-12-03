@@ -22,9 +22,6 @@ For Admins:
 2. EACH ROOM CAN SHOW MAXIMUM OF 2 MOVIES FOR A DAY. EX(ROOM 1 CAN SHOW movie a from 8-10 and movie b from 2-5)
 2. Configure the seat layout of movie rooms.
 */
-
-// Base class for all cinema-related functionality
-
 struct Movie
 {
     string title;
@@ -135,7 +132,6 @@ public:
     Ticket(const string &movie, int roomNumber, const vector<string> &seatList, double price)
         : movieTitle(movie), room(roomNumber), seats(seatList), totalPrice(price) {}
 
-    // Method to print ticket details
     void printTicket() override
     {
         cout << "\nBooking confirmed!\n";
@@ -145,7 +141,7 @@ public:
         for (const auto &seat : seats)
             cout << seat << " ";
         cout << endl;
-        cout << "Total Price: PHP" << totalPrice << endl;
+        cout << "Total Price: Php" << totalPrice << endl;
     }
 };
 
@@ -168,7 +164,6 @@ public:
 
     void viewMovies() override
     {
-        // print header
         cout << "----------------------------------------------------------\n";
         cout << setw(10) << left << "Room"
              << setw(25) << "Movie Title"
@@ -181,7 +176,6 @@ public:
 
         for (const auto &room : rooms)
         {
-            // Check if the room number has changed
             if (room.first != previousRoom && previousRoom != -1)
             {
                 cout << "\n";
@@ -196,7 +190,7 @@ public:
                 }
                 else
                 {
-                    cout << setw(10) << ""; // Empty space if the room number is the same
+                    cout << setw(10) << "";
                 }
 
                 cout << setw(25) << movie.title
@@ -598,6 +592,24 @@ public:
     {
         cout << "Managing seat layout...\n";
     }
+
+    void releaseSeats(int roomIndex, const vector<string> &seats)
+    {
+        for (const auto &seat : seats)
+        {
+            // Check if the seat is currently booked
+            if (roomBookedSeats[roomIndex].find(seat) != roomBookedSeats[roomIndex].end() && roomBookedSeats[roomIndex][seat])
+            {
+                // Mark the seat as available (released)
+                roomBookedSeats[roomIndex][seat] = false;
+                cout << "Seat " << seat << " has been released.\n";
+            }
+            else
+            {
+                cout << "Seat " << seat << " was not booked or does not exist.\n";
+            }
+        }
+    }
 };
 
 map<int, map<string, bool>> Seat::roomBookedSeats;
@@ -660,11 +672,9 @@ public:
             selectedMovie = movies.rooms[roomChoice][0];
         }
 
-        // Get ticket count
         cout << "\nEnter number of tickets: ";
         getValidQuantity("ticket count", ticketCount);
 
-        // Calculate total price
         double totalPrice = selectedMovie.price * ticketCount;
 
         // Select seats
@@ -676,12 +686,12 @@ public:
             return;
         }
 
-        // Get booking date
+        // Get booking date NOTE: USE CHRONO AND VALIDATION HERE
         string bookingDate;
         cout << "Enter booking date (YYYY-MM-DD): ";
         cin >> bookingDate;
 
-        // Confirm booking
+        // Confirm booking NOTE: IMPROVE VALIDATION F
         string confirm;
         cout << "Confirm booking? (y/n): ";
         cin >> confirm;
@@ -712,20 +722,64 @@ public:
 
     void cancelBooking() override
     {
-        cout << "User is canceling a booking...\n";
-        // Implementation needed
+        if (userBookings.empty())
+        {
+            cout << "No bookings available to cancel.\n";
+            return;
+        }
+
+        viewBooking();
+
+        int bookingIndex;
+        getValidQuantity("index", bookingIndex);
+
+        if (bookingIndex < 1 || bookingIndex > userBookings.size())
+        {
+            cout << "Invalid booking selection.\n";
+            return;
+        }
+
+        bookingIndex--;
+
+        seatManager.releaseSeats(userBookings[bookingIndex].room, userBookings[bookingIndex].seats);
+
+        cout << "Canceling booking for movie: " << userBookings[bookingIndex].movieTitle << "\n";
+        userBookings.erase(userBookings.begin() + bookingIndex);
+
+        cout << "Booking canceled successfully.\n";
+        cout << "PHP " << userBookings[bookingIndex].totalPrice << " has been refunded.";
     }
 
     void viewBooking() override
     {
-        cout << "User is viewing their booking...\n";
-        // Implementation needed
+        if (userBookings.empty())
+        {
+            cout << "You currently have no bookings.\n";
+            return;
+        }
+        cout << "Your Bookings:\n";
+
+        for (size_t i = 0; i < userBookings.size(); ++i)
+        {
+            const auto &booking = userBookings[i];
+
+            cout << i + 1 << ". Movie: " << booking.movieTitle << "\n"
+                 << "   Room: " << booking.room << "\n"
+                 << "   Date: " << booking.date << "\n"
+                 << "   Seats: ";
+
+            for (const auto &seat : booking.seats)
+            {
+                cout << seat << " ";
+            }
+
+            cout << "\n   Total Price: Php" << booking.totalPrice << "\n\n";
+        }
     }
 
     void modifiedBooking() override
     {
         cout << "User is modifying their booking...\n";
-        // Implementation needed
     }
 };
 
@@ -815,7 +869,7 @@ class Display : public Movies, public Seat, public Booking
 public:
     void loginMenu()
     {
-        cout << "\nWelcome to Group 3 Cinema: \n"
+        cout << "\n\nWelcome to Group 3 Cinema: \n"
              << "1 - User\n"
              << "2 - Admin\n"
              << "3 - Exit\n";
@@ -823,7 +877,7 @@ public:
 
     void userMenu()
     {
-        cout << "\nWelcome to Group 3 Cinema: Your Ultimate Movie Experience! \n"
+        cout << "\n\nWelcome to Group 3 Cinema: Your Ultimate Movie Experience! \n"
              << "1 - View Movies\n"
              << "2 - View Seats\n"
              << "3 - Make a Booking\n"
@@ -835,7 +889,7 @@ public:
     void adminMenu()
     {
         // add user functionality here too :>
-        cout << "\nAdmin Dashboard: Manage Showtimes, Tickets, and More \n"
+        cout << "\n\nAdmin Dashboard: Manage Showtimes, Tickets, and More \n"
              << "1 - Manage Movies and Showtimes\n"
              << "2 - Manage Seat Layout\n"
              << "0 - Exit to Login\n";
