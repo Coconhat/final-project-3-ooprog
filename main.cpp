@@ -59,6 +59,7 @@ public:
 
     void viewMovies()
     {
+        // print header
         cout << "----------------------------------------------------------\n";
         cout << setw(10) << left << "Room"
              << setw(25) << "Movie Title"
@@ -77,7 +78,7 @@ public:
                 cout << "\n"; // Add extra newline when the room changes
             }
 
-            for (const auto &movie : room.second)
+            for (const auto &movie : room.second) // loop over the movies struct
             {
                 // Print room number only once per room
                 if (room.first != previousRoom)
@@ -142,13 +143,14 @@ private:
     void addMovie()
     {
         int room;
+        const int maxRoom = 2;
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
-        // Check if room already has 2 movies
-        if (rooms[room].size() >= 2)
+        // Check if room already has movies
+        if (rooms[room].size() >= maxRoom)
         {
-            cout << "Room " << room << " has reached its movie limit (2 movies maximum).\n";
+            cout << "Room " << room << " already has a movie in it.\n";
             return;
         }
 
@@ -167,6 +169,8 @@ private:
         cout << "Enter Showtime (hour and minute):\n";
         getValidInput("Hour", hour, 0, 23);
         getValidInput("Minute", minute, 0, 59);
+
+        //validate here too
 
         // Ask for until time
         cout << "\nEnter Until time (hour and minute):\n";
@@ -429,28 +433,62 @@ public:
 class Seat : public Cinema
 {
 public:
+    void viewSeats(int roomIndex, const map<string, bool> &bookedSeats)
+    {
+        // Print room and seat layout information
+        cout << "\nSeat Layout for Room " << roomIndex << "\n\n";
+
+        // Print column numbers
+        cout << "     "; // Adjusted initial spacing for alignment with row labels
+        for (int j = 1; j <= 10; ++j)
+        {
+            if (j == 1)
+            {
+                cout << j; // Print the first number without extra margin
+            }
+            else
+            {
+                cout << setw(5) << j; // For subsequent numbers, use setw for spacing
+            }
+        }
+        cout << "\n\n";
+
+        // Print seat layout
+        for (int i = 0; i < 10; ++i)
+        {
+            // Print row letter
+            char rowLetter = 'A' + i;
+            cout << rowLetter << "   ";
+
+            for (int j = 0; j < 10; ++j)
+            {
+                // Create seat identifier
+                string seatId = string(1, rowLetter) + to_string(j + 1);
+
+                // Display the seat identifier instead of [O] or [X]
+                // Check if seat is booked
+                if (bookedSeats.count(seatId) && bookedSeats.at(seatId))
+                {
+                    cout << "X"; // Booked seat, show the seat identifier followed by '@'
+                }
+                else
+                {
+                    cout << seatId << "   "; // Available seat, just show the seat identifier
+                }
+            }
+            cout << endl;
+        }
+    }
+
+    // Original viewSeats method can be removed or modified as needed
     void viewSeats() override
     {
-        string index;
+        int roomIndex;
+        cout << "Enter room number (1-4) to view seat layout: ";
+        getValidRoom("room number", roomIndex);
 
-        cout << "Enter theater index to view their seats: ";
-        cin >> index;
-        // 1 room palang to, dapat 4 depende sa movie room
-        if (index == "1")
-        {
-
-            vector<vector<char>> seats(10, vector<char>(10, 'A'));
-
-            for (int i = 0; i < 10; ++i)
-            {
-                for (int j = 0; j < 10; ++j)
-                {
-                    cout << "[" << static_cast<char>('A' + i) << j + 1 << "]  ";
-                }
-                cout << endl;
-            }
-            cout.flush();
-        }
+        map<string, bool> bookedSeats;
+        viewSeats(roomIndex, bookedSeats);
     }
     void manageSeatLayout() override
     {
