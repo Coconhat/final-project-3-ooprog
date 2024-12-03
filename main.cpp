@@ -3,9 +3,13 @@
 #include <iomanip>
 #include <map>
 #include <mutex>
+#include <chrono>
+#include <algorithm>
+#include <sstream>
 #include "inputValidation.cpp" //validation function included here
 
 using namespace std;
+using namespace chrono;
 
 /*
 For Users:
@@ -36,7 +40,6 @@ public:
     map<int, vector<Movie>> rooms;
 
     virtual void viewMovies() = 0;
-
     virtual void manageMovieAndShowtime() = 0;
     virtual ~Cinema() = default;
 };
@@ -63,10 +66,15 @@ class ShowtimeManager
     virtual void getSchedule(int room, int &hour, int &minute, int &untilHour, int &untilMinute, map<int, vector<Movie>> &rooms, string &showtime, string &until) = 0;
 };
 
-class Showtime
+// base class for ticket
+class TicketManager
+{
+    virtual double calculateTicket(int ticket, int quantity) = 0;
+};
+class Showtime : public ShowtimeManager
 {
 public:
-    void getSchedule(int room, int &hour, int &minute, int &untilHour, int &untilMinute, map<int, vector<Movie>> &rooms, string &showtime, string &until)
+    void getSchedule(int room, int &hour, int &minute, int &untilHour, int &untilMinute, map<int, vector<Movie>> &rooms, string &showtime, string &until) override
     {
         // Ask for showtime
         cout << "Enter Showtime (hour and minute):\n";
@@ -149,22 +157,22 @@ public:
              << setw(15) << "Ticket Price\n";
         cout << "----------------------------------------------------------\n";
 
-        int previousRoom = -1; // To track the previous room number
+        int previousRoom = -1; 
 
         for (const auto &room : rooms)
         {
             // Check if the room number has changed
             if (room.first != previousRoom && previousRoom != -1)
             {
-                cout << "\n"; // Add extra newline when the room changes
+                cout << "\n"; 
             }
 
-            for (const auto &movie : room.second) // loop over the movies struct
+            for (const auto &movie : room.second) 
             {
-                // Print room number only once per room
+                
                 if (room.first != previousRoom)
                 {
-                    cout << setw(10) << left << to_string(room.first); // Print room number
+                    cout << setw(10) << left << to_string(room.first); 
                 }
                 else
                 {
@@ -177,7 +185,7 @@ public:
                      << setw(15) << fixed << setprecision(2) << movie.price << "\n";
             }
 
-            previousRoom = room.first; // Update previousRoom to current room
+            previousRoom = room.first; 
         }
 
         cout << "----------------------------------------------------------\n";
@@ -228,10 +236,10 @@ private:
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
-        // Check if room already has movies
+        
         if (rooms[room].size() >= maxRoom)
         {
-            cout << "Room " << room << " already has a movie in it.\n";
+            cout << "Room " << room << " already has 2 movies in it.\n";
             return;
         }
 
@@ -250,10 +258,10 @@ private:
         Showtime show;
         show.getSchedule(room, hour, minute, untilHour, untilMinute, rooms, showtime, until);
 
-        if (showtime.empty() || until.empty()) // Showtimes should only be set if valid
+        if (showtime.empty() || until.empty()) 
         {
             cout << "Movie not added due to invalid schedule.\n";
-            return; // Don't proceed with adding the movie
+            return; 
         }
 
         getValidPrice("price", price);
@@ -383,10 +391,202 @@ private:
 };
 
 // Handles booking-related functionality
+class Seat : public SeatManager
+{
+private:
+    // Static to record other's method booked seats
+    static map<int, map<string, bool>> roomBookedSeats;
+
+public:
+    static void initializeSeats()
+    {
+        for (int room = 1; room <= 4; ++room)
+        {
+            for (char row = 'A'; row <= 'J'; ++row)
+            {
+                for (int col = 1; col <= 10; ++col)
+                {
+                    string seatId = string(1, row) + to_string(col);
+                    // Only initialize if the seat doesn't exist
+                    if (roomBookedSeats[room].find(seatId) == roomBookedSeats[room].end())
+                    {
+                        roomBookedSeats[room][seatId] = false;
+                    }
+                }
+            }
+        }
+    }
+
+    Seat()
+    {
+        initializeSeats();
+    }
+
+    bool isValidSeat(const string &seatId)
+    {
+        // Check if seat ID is valid (A1-J10)
+        if (seatId.length() < 2 || seatId.length() > 3)
+            return false;
+
+        char row = seatId[0];
+        int col;
+        try
+        {
+            col = stoi(seatId.substr(1));
+        }
+        catch (...)
+        {
+            return false;
+        }
+
+        return (row >= 'A' && row <= 'J' && col >= 1 && col <= 10);
+    }
+
+    void viewRoomSeats(int roomIndex)
+    {
+        initializeSeats();
+
+        cout << "\nSeat Layout for Room " << roomIndex << "\n\n";
+
+        // Print column numbers
+        cout << "   ";
+        for (int j = 1; j <= 10; ++j)
+        {
+            cout << setw(6) << j;
+        }
+        cout << "\n\n";
+
+        // Print seat layout
+        for (int i = 0; i < 10; ++i)
+        {
+           
+            char rowLetter = 'A' + i;
+            cout << rowLetter << "   ";
+
+            for (int j = 1; j <= 10; ++j)
+            {
+                // Create seat identifier
+                string seatId = string(1, rowLetter) + to_string(j);
+
+               
+                bool isBooked = roomBookedSeats[roomIndex][seatId];
+
+                if (isBooked)
+                {
+                    cout << setw(6) << "X"; 
+                }
+                else
+                {
+                    cout << setw(6) << seatId;
+                }
+            }
+            cout << endl;
+        }
+    }
+
+    void viewSeats() override
+    {
+        int roomIndex;
+        cout << "Enter room number (1-4) to view seat layout: ";
+        getValidRoom("room number", roomIndex);
+
+        viewRoomSeats(roomIndex);
+    }
+
+    void selectSeat() override
+    {
+        int roomIndex;
+        cout << "Enter room number (1-4) to view seat layout: ";
+        getValidRoom("room number", roomIndex);
+
+        vector<string> selectedSeats = selectSeats(roomIndex, 1);
+
+        if (!selectedSeats.empty())
+        {
+            cout << "You selected seat: " << selectedSeats[0] << endl;
+        }
+    }
+
+    vector<string> selectSeats(int roomIndex, int ticketCount)
+    {
+        vector<string> selectedSeats;
+
+        while (selectedSeats.size() < ticketCount)
+        {
+           
+            viewRoomSeats(roomIndex);
+
+            string selectedSeat;
+            bool validSelection = false;
+
+            while (!validSelection)
+            {
+                cout << "Please select seat " << (selectedSeats.size() + 1)
+                     << " of " << ticketCount << " (e.g., A1, B2): ";
+                cin >> selectedSeat;
+
+                
+                if (!isValidSeat(selectedSeat))
+                {
+                    cout << "Invalid seat format. Please use format like A1, B2.\n";
+                    continue;
+                }
+
+         
+                if (roomBookedSeats[roomIndex][selectedSeat])
+                {
+                    cout << "Seat " << selectedSeat << " is already booked. Please choose another seat.\n";
+                    continue;
+                }
+
+                
+                if (find(selectedSeats.begin(), selectedSeats.end(), selectedSeat) != selectedSeats.end())
+                {
+                    cout << "You have already selected seat " << selectedSeat << ". Choose a different seat.\n";
+                    continue;
+                }
+
+               
+                selectedSeats.push_back(selectedSeat);
+                validSelection = true;
+            }
+
+            
+            if (ticketCount > 1)
+            {
+                char confirm;
+                cout << "Seat " << selectedSeat << " selected. Continue selecting? (y/n): ";
+                cin >> confirm;
+                if (tolower(confirm) != 'y')
+                    break;
+            }
+        }
+
+        return selectedSeats;
+    }
+
+
+    void bookSeats(int roomIndex, const vector<string> &seats)
+    {
+        for (const auto &seat : seats)
+        {
+            roomBookedSeats[roomIndex][seat] = true;
+        }
+    }
+
+    void manageSeatLayout() override
+    {
+        cout << "Managing seat layout...\n";
+    }
+};
+
+map<int, map<string, bool>> Seat::roomBookedSeats;
+
+// Handles booking-related functionality
 class Booking : public BookingManager
 {
 private:
-    map<int, vector<string>> bookedSeats;
+    Seat seatManager;
     Movies movies;
 
     struct BookingInfo
@@ -403,7 +603,8 @@ private:
 public:
     void makeBooking() override
     {
-        int roomChoice;
+        int roomChoice, ticketCount;
+        double pricePerTicket = 12.50; //sample ticket price
 
         cout << "Available Movies:\n";
         movies.viewMovies();
@@ -417,6 +618,7 @@ public:
             return;
         }
 
+        Movie selectedMovie;
         if (movies.rooms[roomChoice].size() > 1)
         {
             cout << "Enter the number of your movie: ";
@@ -426,127 +628,88 @@ public:
             }
             int index;
             getValidInput("movie index", index, 1, movies.rooms[roomChoice].size());
-
-            cout << "yey";
+            selectedMovie = movies.rooms[roomChoice][index - 1];
+        }
+        else
+        {
+            selectedMovie = movies.rooms[roomChoice][0];
         }
 
-        // if 2 movies prompt the user to enter 1 for movie a and 2 for movie b
+        // Get ticket count
+        cout << "\nEnter number of tickets:";
+        getValidQuantity("ticket count", ticketCount);
 
-        // show ticket price and ask for how many ticket
+        // Calculate total price
+        double totalPrice = ticketCount * pricePerTicket; // put this sa ticket class methods
+        cout << "\nTotal price for " << ticketCount << " tickets: $" << totalPrice << endl;
 
-        // ask for date
+        // Select seats
+        vector<string> selectedSeats = seatManager.selectSeats(roomChoice, ticketCount);
 
-        // get seat layout function
+        if (selectedSeats.size() != ticketCount)
+        {
+            cout << "Seat selection cancelled.\n";
+            return;
+        }
 
-        // payment function
+        // Get booking date
+        string bookingDate;
+        cout << "Enter booking date (YYYY-MM-DD): ";
+        cin >> bookingDate;
 
-        // confirmation
+        // Confirm booking
+        char confirm;
+        cout << "Confirm booking? (y/n): ";
+        cin >> confirm;
+
+        if (tolower(confirm) == 'y')
+        {
+            // Create booking record
+            BookingInfo newBooking;
+            newBooking.movieTitle = selectedMovie.title;
+            newBooking.room = roomChoice;
+            newBooking.seats = selectedSeats;
+            newBooking.ticketCount = ticketCount;
+            newBooking.totalPrice = totalPrice;
+            newBooking.date = bookingDate;
+
+            userBookings.push_back(newBooking);
+
+            // Mark seats as booked
+            seatManager.bookSeats(roomChoice, selectedSeats);
+
+            cout << "Booking confirmed!\n";
+            cout << "Movie: " << newBooking.movieTitle << endl;
+            cout << "Room: " << newBooking.room << endl;
+            cout << "Seats: ";
+            for (const auto &seat : selectedSeats)
+                cout << seat << " ";
+            cout << endl;
+            cout << "Total Price: $" << totalPrice << endl;
+        }
+        else
+        {
+            cout << "Booking cancelled.\n";
+        }
     }
 
     void cancelBooking() override
     {
         cout << "User is canceling a booking...\n";
-        // view booking function
-
-        // ask the user which booking they want to cancel
-
-        // confirm cancel and update the seat layout
+        // Implementation needed
     }
 
     void viewBooking() override
     {
         cout << "User is viewing their booking...\n";
-
-        // show booking
+        // Implementation needed
     }
 
     void modifiedBooking() override
     {
-        cout << "User is viewing their booking...\n";
-
-        // show view booking function
-
-        // ask what they booking they want to modified
-
-        // modify what? ticket or seat
-
-        //..
+        cout << "User is modifying their booking...\n";
+        // Implementation needed
     }
-};
-
-// Handles seat-related functionality
-class Seat : public SeatManager
-{
-public:
-    void viewSeats(int roomIndex, const map<string, bool> &bookedSeats)
-    {
-        // Print room and seat layout information
-        cout << "\nSeat Layout for Room " << roomIndex << "\n\n";
-
-        // Print column numbers
-        cout << "     "; // Adjusted initial spacing for alignment with row labels
-        for (int j = 1; j <= 10; ++j)
-        {
-            if (j == 1)
-            {
-                cout << j; // Print the first number without extra margin
-            }
-            else
-            {
-                cout << setw(5) << j; // For subsequent numbers, use setw for spacing
-            }
-        }
-        cout << "\n\n";
-
-        // Print seat layout
-        for (int i = 0; i < 10; ++i)
-        {
-            // Print row letter
-            char rowLetter = 'A' + i;
-            cout << rowLetter << "   ";
-
-            for (int j = 0; j < 10; ++j)
-            {
-                // Create seat identifier
-                string seatId = string(1, rowLetter) + to_string(j + 1);
-
-                // Check if seat is booked
-                if (bookedSeats.count(seatId) && bookedSeats.at(seatId))
-                {
-                    cout << "X"; // Booked seat, show the seat identifier followed by '@'
-                }
-                else
-                {
-                    cout << seatId << "   "; // Available seat, just show the seat identifier
-                }
-            }
-            cout << endl;
-        }
-    }
-
-    // Original viewSeats method can be removed or modified as needed
-    void viewSeats() override
-    {
-        int roomIndex;
-        cout << "Enter room number (1-4) to view seat layout: ";
-        getValidRoom("room number", roomIndex);
-
-        map<string, bool> bookedSeats;
-        viewSeats(roomIndex, bookedSeats);
-    }
-    void manageSeatLayout() override
-    {
-        cout << "Managing seat layout...\n";
-    }
-
-    void selectSeat() override
-    {
-        string selectedSeat;
-        cout << "Please select your seats (e.g A1, B2): ";
-        cin >> selectedSeat;
-
-        // if in that room the seat is taken it will prompt  the user to return if not it will confirm and update the seats.
-    };
 };
 
 class Payment
@@ -632,9 +795,6 @@ mutex Payment::instanceMutex;
 // Handles display logic
 class Display : public Movies, public Seat, public Booking
 {
-private:
-    Movies movie;
-
 public:
     void loginMenu()
     {
