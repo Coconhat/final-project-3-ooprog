@@ -20,20 +20,6 @@ For Admins:
 */
 
 // Base class for all cinema-related functionality
-class Cinema
-{
-public:
-    virtual void viewMovies() {}
-    virtual void makeBooking() {}
-    virtual void cancelBooking() {}
-    virtual void modifiedBooking() {}
-    virtual void viewBooking() {}
-    virtual void viewSeats() {}
-    virtual void selectSeat() {}
-    virtual void manageMovieAndShowtime() {}
-    virtual void manageSeatLayout() {}
-    virtual ~Cinema() = default;
-};
 
 struct Movie
 {
@@ -41,6 +27,40 @@ struct Movie
     string showtime;
     string until;
     double price;
+};
+
+// base class for movie
+class Cinema
+{
+public:
+    map<int, vector<Movie>> rooms;
+
+    virtual void viewMovies() = 0;
+
+    virtual void manageMovieAndShowtime() = 0;
+    virtual ~Cinema() = default;
+};
+
+// base class for booking
+class BookingManager
+{
+    virtual void makeBooking() = 0;
+    virtual void cancelBooking() = 0;
+    virtual void modifiedBooking() = 0;
+    virtual void viewBooking() = 0;
+};
+// base class for seat
+class SeatManager
+{
+    virtual void viewSeats() = 0;
+    virtual void selectSeat() = 0;
+    virtual void manageSeatLayout() = 0;
+};
+
+// base class for show time
+class ShowtimeManager
+{
+    virtual void getSchedule(int room, int &hour, int &minute, int &untilHour, int &untilMinute, map<int, vector<Movie>> &rooms, string &showtime, string &until) = 0;
 };
 
 class Showtime
@@ -106,12 +126,9 @@ public:
     }
 };
 
-class Movies
+class Movies : public Cinema
 {
-private:
 public:
-    map<int, vector<Movie>> rooms;
-
     Movies()
     {
         // Initialize rooms with default movies
@@ -121,7 +138,7 @@ public:
         rooms[4].push_back({"Joker", "09:30", "11:45", 250});
     }
 
-    void viewMovies()
+    void viewMovies() override
     {
         // print header
         cout << "----------------------------------------------------------\n";
@@ -166,7 +183,7 @@ public:
         cout << "----------------------------------------------------------\n";
     }
 
-    void manageMovieAndShowtime()
+    void manageMovieAndShowtime() override
     {
         string choice;
         while (choice != "0")
@@ -366,11 +383,11 @@ private:
 };
 
 // Handles booking-related functionality
-class Booking : public Cinema
+class Booking : public BookingManager
 {
 private:
-    Movies movies;
     map<int, vector<string>> bookedSeats;
+    Movies movies;
 
     struct BookingInfo
     {
@@ -458,7 +475,7 @@ public:
 };
 
 // Handles seat-related functionality
-class Seat : public Cinema
+class Seat : public SeatManager
 {
 public:
     void viewSeats(int roomIndex, const map<string, bool> &bookedSeats)
@@ -493,7 +510,6 @@ public:
                 // Create seat identifier
                 string seatId = string(1, rowLetter) + to_string(j + 1);
 
-                // Display the seat identifier instead of [O] or [X]
                 // Check if seat is booked
                 if (bookedSeats.count(seatId) && bookedSeats.at(seatId))
                 {
@@ -525,7 +541,11 @@ public:
 
     void selectSeat() override
     {
+        string selectedSeat;
         cout << "Please select your seats (e.g A1, B2): ";
+        cin >> selectedSeat;
+
+        // if in that room the seat is taken it will prompt  the user to return if not it will confirm and update the seats.
     };
 };
 
@@ -610,12 +630,10 @@ Payment *Payment::instance = nullptr;
 mutex Payment::instanceMutex;
 
 // Handles display logic
-class Display : public Cinema
+class Display : public Movies, public Seat, public Booking
 {
 private:
-    Movies movies;
-    Booking booking;
-    Seat seat;
+    Movies movie;
 
 public:
     void loginMenu()
@@ -689,23 +707,23 @@ public:
 
             if (choice == "1")
             {
-                movies.viewMovies();
+                viewMovies();
             }
             else if (choice == "2")
             {
-                seat.viewSeats();
+                viewSeats();
             }
             else if (choice == "3")
             {
-                booking.makeBooking();
+                makeBooking();
             }
             else if (choice == "4")
             {
-                booking.cancelBooking();
+                cancelBooking();
             }
             else if (choice == "5")
             {
-                booking.viewBooking();
+                viewBooking();
             }
             else if (choice == "0")
             {
@@ -731,11 +749,11 @@ public:
 
             if (choice == "1")
             {
-                movies.manageMovieAndShowtime();
+                manageMovieAndShowtime();
             }
             else if (choice == "2")
             {
-                seat.manageSeatLayout();
+                manageSeatLayout();
             }
             else if (choice == "0")
             {
