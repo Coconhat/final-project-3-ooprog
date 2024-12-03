@@ -2,6 +2,7 @@
 #include <vector>
 #include <iomanip>
 #include <map>
+#include <mutex>
 #include "inputValidation.cpp" //validation function included here
 
 using namespace std;
@@ -501,10 +502,76 @@ public:
     };
 };
 
-class Payment
-{
-    // Singleton or Strategy Design Pattern from GoF heree
+class Payment { //SINGLETON PATTERN
+private:
+    // Singleton instance
+    static Payment* instance;
+
+    // Mutex for thread safety
+    static mutex instanceMutex;
+
+    // Payment properties
+    int paymentID;
+    float amount;
+    string method;
+    string status;
+
+    // Private constructor
+    Payment() : paymentID(0), amount(0.0), method("Unknown"), status("Pending") {}
+
+public:
+    // Public static method
+    static Payment* getInstance() {
+        // Mutex Thread Lock Safety
+        if (instance == nullptr) {
+            lock_guard<mutex> lock(instanceMutex); // Thread-safe
+            if (instance == nullptr) {
+                instance = new Payment();
+            }
+        }
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    Payment(const Payment&) = delete;
+    Payment& operator=(const Payment&) = delete;
+
+    // Setters and Getters
+    void setPaymentID(int id) { paymentID = id; }
+    int getPaymentID() const { return paymentID; }
+
+    void setAmount(float amt) { amount = amt; }
+    float getAmount() const { return amount; }
+
+    void setMethod(const string& mtd) { method = mtd; }
+    string getMethod() const { return method; }
+
+    void setStatus(const string& sts) { status = sts; }
+    string getStatus() const { return status; }
+
+    // Business logic: Payment processing
+    bool processPayment() {
+        if (method == "Credit Card" || method == "Gcash" || method == "Cash") {
+            status = "Processed";
+            return true;
+        } else {
+            status = "Failed";
+            return false;
+        }
+    }
+
+    // Business logic: Display payment details
+    void displayPaymentDetails() const {
+        cout << "Payment ID: " << paymentID << endl;
+        cout << "Amount: $" << amount << endl;
+        cout << "Method: " << method << endl;
+        cout << "Status: " << status << endl;
+    }
 };
+
+// Initialize static members
+Payment* Payment::instance = nullptr;
+mutex Payment::instanceMutex;
 
 // Handles display logic
 class Display : public Cinema
