@@ -95,6 +95,16 @@ public:
     }
 };
 
+class Ticket
+{
+
+public:
+    double calculateTicket(int ticket, int quantity)
+    {
+        return ticket * quantity;
+    }
+};
+
 class Movies
 {
 private:
@@ -227,8 +237,6 @@ private:
             cout << "Movie not added due to invalid schedule.\n";
             return; // Don't proceed with adding the movie
         }
-
-    
 
         getValidPrice("price", price);
 
