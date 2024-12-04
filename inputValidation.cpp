@@ -1,5 +1,65 @@
 #include <iostream>
+#include <ctime>
+#include <chrono>
+#include <regex>
 using namespace std;
+
+// Function to get a valid date from the user in YYYY-MM-DD format
+string getCurrentDate()
+{
+    time_t now = time(0);
+    tm *currentTime = localtime(&now);
+
+    stringstream ss;
+    ss << (currentTime->tm_year + 1900) << "-"
+       << (currentTime->tm_mon + 1) << "-"
+       << currentTime->tm_mday;
+
+    return ss.str();
+}
+
+// Function to check if the date is valid
+bool isValidDate(const string &date)
+{
+    regex datePattern(R"(\d{4}-\d{2}-\d{2})");
+    if (!regex_match(date, datePattern))
+    {
+        cout << "Invalid date format. Please use YYYY-MM-DD.\n";
+        return false;
+    }
+    return true;
+}
+
+// Function to check if the date is within the 15-day range
+bool isWithin15Days(const string &bookingDate)
+{
+    time_t now = time(0);
+    tm *currentTime = localtime(&now);
+
+    int bookingYear, bookingMonth, bookingDay;
+    sscanf(bookingDate.c_str(), "%d-%d-%d", &bookingYear, &bookingMonth, &bookingDay);
+
+    tm bookingTime = {};
+    bookingTime.tm_year = bookingYear - 1900;
+    bookingTime.tm_mon = bookingMonth - 1;
+    bookingTime.tm_mday = bookingDay;
+
+    time_t bookingTime_t = mktime(&bookingTime);
+    double diffInSeconds = difftime(bookingTime_t, now);
+    double diffInDays = diffInSeconds / (60 * 60 * 24);
+
+    if (diffInDays < 0)
+    {
+        cout << "The date cannot be in the past.\n";
+        return false;
+    }
+    else if (diffInDays > 15)
+    {
+        cout << "You can only book a movie within 15 days in advance.\n";
+        return false;
+    }
+    return true;
+}
 
 // Function to check if a string represents a valid number
 // This function ensures the input is a valid numeric value with at most one decimal point.

@@ -6,6 +6,7 @@
 #include <chrono>
 #include <algorithm>
 #include <sstream>
+#include <ctime>
 #include "inputValidation.cpp"
 
 using namespace std;
@@ -110,10 +111,11 @@ private:
     int room;
     vector<string> seats;
     double totalPrice;
+    string date;
 
 public:
-    Ticket(const string &movie, int roomNumber, const vector<string> &seatList, double price)
-        : movieTitle(movie), room(roomNumber), seats(seatList), totalPrice(price) {}
+    Ticket(const string &movie, int roomNumber, const vector<string> &seatList, double price, const string &bookingDate)
+        : movieTitle(movie), room(roomNumber), seats(seatList), totalPrice(price), date(bookingDate) {}
 
     void printTicket() override
     {
@@ -124,6 +126,7 @@ public:
         for (const auto &seat : seats)
             cout << seat << " ";
         cout << endl;
+        cout << "Date: " << date << endl;
         cout << "Total Price: Php" << totalPrice << endl;
     }
 };
@@ -691,7 +694,6 @@ public:
         cout << "Available Movies:\n";
         movies.viewMovies();
 
-        
         if (movies.rooms.empty())
         {
             cout << "No movies available for booking.\n";
@@ -745,9 +747,68 @@ public:
         }
 
         // Get booking date
-        string bookingDate;
-        cout << "Enter booking date (YYYY-MM-DD): ";
-        cin >> bookingDate;
+        string bookingDate = getCurrentDate();
+
+        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        string userChoice;
+        cin >> userChoice;
+
+        // If the user doesn't want the current date, allow them to choose from 1 to 5 days ahead
+        if (userChoice == "N" || userChoice == "n")
+        {
+            int dayChoice;
+            cout << "Please select a number between 1 and 5 to book a date:\n";
+            cout << "1. 1 day after today\n";
+            cout << "2. 2 days after today\n";
+            cout << "3. 3 days after today\n";
+            cout << "4. 4 days after today\n";
+            cout << "5. 5 days after today\n";
+            cout << "Enter your choice (1-5) or press 'n' to exit: ";
+
+            string userChoice;
+            cin >> userChoice;
+
+            // Allow the user to exit by entering 'n'
+            if (userChoice == "n" || userChoice == "N")
+            {
+                cout << "Exiting date selection.\n";
+                return; // Exit the function if the user presses 'n'
+            }
+
+            while (dayChoice < 1 || dayChoice > 5)
+            {
+                // Validate user input
+                if (userChoice == "1" || userChoice == "2" || userChoice == "3" || userChoice == "4" || userChoice == "5")
+                {
+                    dayChoice = stoi(userChoice);
+                }
+                else
+                {
+                    cout << "Invalid input. Please enter a number between 1 and 5 or press 'n' to exit: ";
+                    cin >> userChoice;
+
+                    if (userChoice == "n" || userChoice == "N")
+                    {
+                        cout << "Exiting date selection.\n";
+                        return;
+                    }
+                }
+            }
+
+            // Calculate the selected booking date
+            time_t now = time(0);
+            tm *currentTime = localtime(&now);
+            currentTime->tm_mday += dayChoice; // Add selected days to current date
+            mktime(currentTime);               // Normalize the time struct
+            stringstream ss;
+            ss << (currentTime->tm_year + 1900) << "-"
+               << setfill('0') << setw(2) << (currentTime->tm_mon + 1) << "-"
+               << setfill('0') << setw(2) << currentTime->tm_mday;
+
+            bookingDate = ss.str(); // Set the new booking date
+        }
+
+        cout << "Booking date is set to: " << bookingDate << endl;
 
         // Confirm booking
         string confirm;
@@ -758,7 +819,7 @@ public:
         if (confirm == "Y")
         {
             // Create a Ticket object
-            Ticket ticket(selectedMovie.title, roomChoice, selectedSeats, totalPrice);
+            Ticket ticket(selectedMovie.title, roomChoice, selectedSeats, totalPrice, bookingDate);
 
             // Print the ticket details
             ticket.printTicket();
@@ -778,7 +839,8 @@ public:
         }
     }
 
-    void cancelBooking() override
+    void
+    cancelBooking() override
     {
         if (userBookings.empty())
         {
@@ -844,7 +906,7 @@ public:
             return;
         }
 
-        viewBooking(); 
+        viewBooking();
         int bookingIndex;
         getValidQuantity("index", bookingIndex);
 
@@ -854,7 +916,7 @@ public:
             return;
         }
 
-        bookingIndex--; 
+        bookingIndex--;
         BookingInfo &bookingToModify = userBookings[bookingIndex];
 
         bool isModified = true;
@@ -869,7 +931,7 @@ public:
             cout << "Enter choice for modification: ";
             cin >> modificationChoice;
 
-            if (modificationChoice == "1") 
+            if (modificationChoice == "1")
             {
                 seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats);
 
@@ -895,7 +957,7 @@ public:
 
                 cout << "Seats modified successfully.\n";
             }
-            else if (modificationChoice == "2") 
+            else if (modificationChoice == "2")
             {
                 int newTicketCount;
                 cout << "Enter new number of tickets: ";
@@ -918,17 +980,17 @@ public:
 
                 cout << "Ticket count and seats modified successfully.\n";
             }
-            else if (modificationChoice == "3") 
+            else if (modificationChoice == "3")
             {
                 string newDate;
                 cout << "Enter new booking date (YYYY-MM-DD): ";
                 cin >> newDate;
-                bookingToModify.date = newDate; 
+                bookingToModify.date = newDate;
                 cout << "Booking date modified successfully.\n";
             }
             else if (modificationChoice == "4")
             {
-                isModified = false; 
+                isModified = false;
                 cout << "Modification canceled.\n";
             }
             else
