@@ -753,7 +753,6 @@ public:
         string userChoice;
         cin >> userChoice;
 
-        // If the user doesn't want the current date, allow them to choose from 1 to 5 days ahead
         if (userChoice == "N" || userChoice == "n")
         {
             int dayChoice;
@@ -768,16 +767,14 @@ public:
             string userChoice;
             cin >> userChoice;
 
-            // Allow the user to exit by entering 'n'
             if (userChoice == "n" || userChoice == "N")
             {
                 cout << "Exiting date selection.\n";
-                return; // Exit the function if the user presses 'n'
+                return; 
             }
 
             while (dayChoice < 1 || dayChoice > 5)
             {
-                // Validate user input
                 if (userChoice == "1" || userChoice == "2" || userChoice == "3" || userChoice == "4" || userChoice == "5")
                 {
                     dayChoice = stoi(userChoice);
@@ -795,17 +792,16 @@ public:
                 }
             }
 
-            // Calculate the selected booking date
             time_t now = time(0);
             tm *currentTime = localtime(&now);
             currentTime->tm_mday += dayChoice; // Add selected days to current date
-            mktime(currentTime);               // Normalize the time struct
+            mktime(currentTime);               
             stringstream ss;
             ss << (currentTime->tm_year + 1900) << "-"
                << setfill('0') << setw(2) << (currentTime->tm_mon + 1) << "-"
                << setfill('0') << setw(2) << currentTime->tm_mday;
 
-            bookingDate = ss.str(); // Set the new booking date
+            bookingDate = ss.str(); 
         }
 
         cout << "Booking date is set to: " << bookingDate << endl;
