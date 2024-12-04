@@ -1517,7 +1517,8 @@ public:
         cout << "Payment ID: " << paymentID << endl;
 
         string methodChoice;
-        while (true) // Loop until a valid choice is made
+        bool ispaying = true;
+        while (ispaying) // Loop until a valid choice is made
         {
             cout << "Select Payment Method:\n";
             cout << "1 - Credit Card\n";
