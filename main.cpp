@@ -1139,10 +1139,10 @@ public:
 
             time_t now = time(0);
             tm *currentTime = localtime(&now);
-            currentTime->tm_mday += dayChoice; // Add selected days to current date
+            currentTime->tm_mday += dayChoice; 
             mktime(currentTime);
 
-            char buffer[11]; // Buffer for date string (YYYY-MM-DD + null terminator)
+            char buffer[11]; // Buffer for date stringss
             strftime(buffer, sizeof(buffer), "%Y-%m-%d", currentTime);
 
             bookingDate = string(buffer);
@@ -1159,11 +1159,19 @@ public:
 
         cout << "Booking date is set to: " << bookingDate << endl;
 
-        // Confirm booking
+       
         string confirm;
-        cout << "Confirm booking? (y/n): ";
+        cout << "Confirm booking? (Y/N): ";
         cin >> confirm;
-        toUpperCase(confirm);
+        toUpperCase(confirm); 
+
+        
+        while (confirm != "Y" && confirm != "N")
+        {
+            cout << "Enter Y or N only: ";
+            cin >> confirm;
+            toUpperCase(confirm); 
+        }
 
         if (confirm == "Y")
         {
@@ -1181,17 +1189,18 @@ public:
             seatManager.bookSeats(roomChoice, selectedSeats, bookingDate);
 
             cout << "Booking successfully saved!\n";
-            // Set payment status to "Pending"
+
+        
             Payment *payment = Payment::getInstance();
             payment->setStatus("Pending");
 
-            payment->setAmount(totalPrice); // Set the amount once
+            payment->setAmount(totalPrice); 
 
-            // Display payment status
+       
             paymentStatus();
 
-            // Prompt for proceeding to payment
-            cout << "Would you like to proceed with payment? (y/n): ";
+           
+            cout << "Would you like to proceed with payment? (Y/N): ";
             cin >> confirm;
             toUpperCase(confirm);
 
@@ -1455,7 +1464,7 @@ public:
                 vector<string> newSeats;
 
                 // show the 2d seats here
-                
+
                 cout << "Enter new seat selections for " << bookingDate << ": ";
                 string seatInput;
                 cin.ignore(); // Clear buffer
