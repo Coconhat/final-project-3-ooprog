@@ -61,6 +61,7 @@ bool isWithin15Days(const string &bookingDate)
     return true;
 }
 
+
 // Function to check if a string represents a valid number
 // This function ensures the input is a valid numeric value with at most one decimal point.
 bool isValidNum(const string &input)

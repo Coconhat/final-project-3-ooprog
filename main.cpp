@@ -379,8 +379,8 @@ class Seat : public SeatManager
 {
 private:
     // Static to record other's method booked seats
-    static map<int, map<string, bool>> roomBookedSeats;
-    static map<int, map<string, bool>> roomReservedSeats; // track reserve seat by admin
+    static map<int, map<string, map<string, bool>>> roomBookedSeats;
+    static map<int, map<string, map<string, bool>>> roomReservedSeats;
 
 public:
     static void initializeSeats()
@@ -392,9 +392,18 @@ public:
                 for (int col = 1; col <= 10; ++col)
                 {
                     string seatId = string(1, row) + to_string(col);
-                    if (roomBookedSeats[room].find(seatId) == roomBookedSeats[room].end())
+                    // Initialize all rooms and dates
+                    for (int dayOffset = 0; dayOffset < 5; ++dayOffset)
                     {
-                        roomBookedSeats[room][seatId] = false;
+                        string date = getDateAfterOffset(dayOffset);
+                        if (roomBookedSeats[room][date].find(seatId) == roomBookedSeats[room][date].end())
+                        {
+                            roomBookedSeats[room][date][seatId] = false;
+                        }
+                        if (roomReservedSeats[room][date].find(seatId) == roomReservedSeats[room][date].end())
+                        {
+                            roomReservedSeats[room][date][seatId] = false;
+                        }
                     }
                 }
             }
@@ -426,11 +435,11 @@ public:
         return (row >= 'A' && row <= 'J' && col >= 1 && col <= 10);
     }
 
-    void viewRoomSeats(int roomIndex)
+    void viewRoomSeats(int roomIndex, const string &bookingDate)
     {
         initializeSeats();
 
-        cout << "\nSeat Layout for Room " << roomIndex << "\n\n";
+        cout << "\nSeat Layout for Room " << roomIndex << " on " << bookingDate << "\n\n";
 
         // Print column numbers
         cout << "   ";
@@ -443,7 +452,6 @@ public:
         // Print seat layout
         for (int i = 0; i < 10; ++i)
         {
-
             char rowLetter = 'A' + i;
             cout << rowLetter << "   ";
 
@@ -452,8 +460,8 @@ public:
                 // Create seat identifier
                 string seatId = string(1, rowLetter) + to_string(j);
 
-                bool isBooked = roomBookedSeats[roomIndex][seatId];
-                bool isReserved = roomReservedSeats[roomIndex][seatId];
+                bool isBooked = roomBookedSeats[roomIndex][bookingDate][seatId];
+                bool isReserved = roomReservedSeats[roomIndex][bookingDate][seatId];
 
                 if (isBooked || isReserved)
                 {
@@ -467,14 +475,72 @@ public:
             cout << endl;
         }
     }
-
     void viewSeats() override
     {
         int roomIndex;
         cout << "Enter room number (1-4) to view seat layout: ";
         getValidRoom("room number", roomIndex);
 
-        viewRoomSeats(roomIndex);
+        // Get booking date
+        string bookingDate = getCurrentDate();
+
+        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        string userChoice;
+        cin >> userChoice;
+
+        if (userChoice == "N" || userChoice == "n")
+        {
+            int dayChoice = 0;
+            cout << "Please select a number between 1 and 5 to book a date:\n";
+            cout << "1. 1 day after today\n";
+            cout << "2. 2 days after today\n";
+            cout << "3. 3 days after today\n";
+            cout << "4. 4 days after today\n";
+            cout << "5. 5 days after today\n";
+            cout << "Enter your choice (1-5) or press 'n' to exit: ";
+
+            string userInput;
+            cin >> userInput;
+
+            if (userInput == "n" || userInput == "N")
+            {
+                cout << "Exiting date selection.\n";
+                return;
+            }
+
+            while (dayChoice < 1 || dayChoice > 5)
+            {
+                if (userInput == "1" || userInput == "2" || userInput == "3" || userInput == "4" || userInput == "5")
+                {
+                    dayChoice = stoi(userInput);
+                    break;
+                }
+                else
+                {
+                    cout << "Invalid input. Please enter a number between 1 and 5 or press 'n' to exit: ";
+                    cin >> userInput;
+
+                    if (userInput == "n" || userInput == "N")
+                    {
+                        cout << "Exiting date selection.\n";
+                        return;
+                    }
+                }
+            }
+
+            time_t now = time(0);
+            tm *currentTime = localtime(&now);
+            currentTime->tm_mday += dayChoice; // Add selected days to current date
+            mktime(currentTime);
+
+            char buffer[11]; // Buffer for date string (YYYY-MM-DD + null terminator)
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d", currentTime);
+
+            bookingDate = string(buffer);
+        }
+
+        cout << "Viewing seat layout for room " << roomIndex << " on " << bookingDate << endl;
+        viewRoomSeats(roomIndex, bookingDate);
     }
 
     void selectSeat() override
@@ -483,7 +549,13 @@ public:
         cout << "Enter room number (1-4) to view seat layout: ";
         getValidRoom("room number", roomIndex);
 
-        vector<string> selectedSeats = selectSeats(roomIndex, 1);
+        string bookingDate = getCurrentDate();
+
+        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        string userChoice;
+        cin >> userChoice;
+
+        vector<string> selectedSeats = selectSeats(roomIndex, 1, bookingDate);
 
         if (!selectedSeats.empty())
         {
@@ -491,13 +563,13 @@ public:
         }
     }
 
-    vector<string> selectSeats(int roomIndex, int ticketCount)
+    vector<string> selectSeats(int roomIndex, int ticketCount, const string &bookingDate)
     {
         vector<string> selectedSeats;
 
         while (selectedSeats.size() < ticketCount)
         {
-            viewRoomSeats(roomIndex);
+            viewRoomSeats(roomIndex, bookingDate);
 
             string selectedSeat;
             bool validSelection = false;
@@ -514,9 +586,9 @@ public:
                     continue;
                 }
 
-                if (roomBookedSeats[roomIndex][selectedSeat])
+                if (roomBookedSeats[roomIndex][bookingDate][selectedSeat])
                 {
-                    cout << "Seat " << selectedSeat << " is already booked. Please choose another seat.\n";
+                    cout << "Seat " << selectedSeat << " is already booked for " << bookingDate << ". Please choose another seat.\n";
                     continue;
                 }
 
@@ -528,49 +600,106 @@ public:
 
                 selectedSeats.push_back(selectedSeat);
                 validSelection = true;
-            }
 
-            if (selectedSeats.size() < ticketCount)
-            {
-                string confirm;
-                cout << "Seat " << selectedSeat << " selected. Continue selecting? (y/n): ";
-                cin >> confirm;
-                toUpperCase(confirm);
+                // Ask for confirmation if enough seats are selected
+                if (selectedSeats.size() < ticketCount)
+                {
+                    string confirm;
+                    cout << "Seat " << selectedSeat << " selected. Continue selecting? (y/n): ";
+                    cin >> confirm;
+                    toUpperCase(confirm);
 
-                if (confirm == "N")
-                {
-                    cout << "Cancelling seat selection.\n";
-                    return {}; // Return an empty vector to indicate cancellation.
-                }
-                else if (confirm != "Y")
-                {
-                    cout << "Invalid input. Please enter 'y' or 'n'. Continuing selection by default.\n";
+                    if (confirm == "N")
+                    {
+                        cout << "Cancelling seat selection.\n";
+                        return {}; // Return an empty vector to indicate cancellation
+                    }
+                    else if (confirm != "Y")
+                    {
+                        cout << "Invalid input. Please enter 'y' or 'n'. Continuing selection by default.\n";
+                    }
                 }
             }
         }
-
         return selectedSeats;
     }
 
-    void bookSeats(int roomIndex, const vector<string> &seats)
+    void bookSeats(int roomIndex, const vector<string> &seats, const string &bookingDate)
     {
         for (const auto &seat : seats)
         {
-            roomBookedSeats[roomIndex][seat] = true;
+            roomBookedSeats[roomIndex][bookingDate][seat] = true;
         }
     }
-
     void manageSeatLayout() override
     {
         int roomIndex;
         cout << "Enter room number (1-4) to manage seat layout: ";
         getValidRoom("room number", roomIndex);
 
-        bool isManaging = true; // Variable to control the loop
+        // Get booking date
+        string bookingDate = getCurrentDate();
+
+        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        string userChoice;
+        cin >> userChoice;
+
+        if (userChoice == "N" || userChoice == "n")
+        {
+            int dayChoice = 0;
+            cout << "Please select a number between 1 and 5 to book a date:\n";
+            cout << "1. 1 day after today\n";
+            cout << "2. 2 days after today\n";
+            cout << "3. 3 days after today\n";
+            cout << "4. 4 days after today\n";
+            cout << "5. 5 days after today\n";
+            cout << "Enter your choice (1-5) or press 'n' to exit: ";
+
+            string userInput;
+            cin >> userInput;
+
+            if (userInput == "n" || userInput == "N")
+            {
+                cout << "Exiting date selection.\n";
+                return;
+            }
+
+            while (dayChoice < 1 || dayChoice > 5)
+            {
+                if (userInput == "1" || userInput == "2" || userInput == "3" || userInput == "4" || userInput == "5")
+                {
+                    dayChoice = stoi(userInput);
+                    break;
+                }
+                else
+                {
+                    cout << "Invalid input. Please enter a number between 1 and 5 or press 'n' to exit: ";
+                    cin >> userInput;
+
+                    if (userInput == "n" || userInput == "N")
+                    {
+                        cout << "Exiting date selection.\n";
+                        return;
+                    }
+                }
+            }
+
+            time_t now = time(0);
+            tm *currentTime = localtime(&now);
+            currentTime->tm_mday += dayChoice; // Add selected days to current date
+            mktime(currentTime);
+
+            char buffer[11]; // Buffer for date string (YYYY-MM-DD + null terminator)
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d", currentTime);
+
+            bookingDate = string(buffer);
+        }
+
+        bool isManaging = true;
 
         while (isManaging)
         {
-            viewRoomSeats(roomIndex);
+            viewRoomSeats(roomIndex, bookingDate);
 
             cout << "\n\nOptions:\n";
             cout << "1. Reserve a seat\n";
@@ -580,7 +709,7 @@ public:
             string choice;
             cin >> choice;
 
-            if (choice == "1") // Reserve a seat
+            if (choice == "1")
             {
                 string selectedSeat;
                 cout << "Enter seat to reserve (e.g., A1, B2): ";
@@ -592,22 +721,22 @@ public:
                     continue;
                 }
 
-                if (roomBookedSeats[roomIndex][selectedSeat])
+                if (roomBookedSeats[roomIndex][bookingDate][selectedSeat])
                 {
                     cout << "Seat " << selectedSeat << " is already booked by a customer and cannot be reserved.\n";
                     continue;
                 }
 
-                if (roomReservedSeats[roomIndex][selectedSeat])
+                if (roomReservedSeats[roomIndex][bookingDate][selectedSeat])
                 {
                     cout << "Seat " << selectedSeat << " is already reserved by an admin.\n";
                     continue;
                 }
 
-                roomReservedSeats[roomIndex][selectedSeat] = true;
+                roomReservedSeats[roomIndex][bookingDate][selectedSeat] = true;
                 cout << "\nSeat " << selectedSeat << " reserved successfully.\n";
             }
-            else if (choice == "2") // Delete a reserved seat
+            else if (choice == "2")
             {
                 string selectedSeat;
                 cout << "Enter seat to delete reservation (e.g., A1, B2): ";
@@ -619,25 +748,25 @@ public:
                     continue;
                 }
 
-                if (roomBookedSeats[roomIndex][selectedSeat])
+                if (roomBookedSeats[roomIndex][bookingDate][selectedSeat])
                 {
                     cout << "Seat " << selectedSeat << " is booked by a customer and cannot be deleted.\n";
                     continue;
                 }
 
-                if (!roomReservedSeats[roomIndex][selectedSeat])
+                if (!roomReservedSeats[roomIndex][bookingDate][selectedSeat])
                 {
                     cout << "Seat " << selectedSeat << " is not reserved.\n";
                     continue;
                 }
 
-                roomReservedSeats[roomIndex][selectedSeat] = false;
+                roomReservedSeats[roomIndex][bookingDate][selectedSeat] = false;
                 cout << "Reservation for seat " << selectedSeat << " has been deleted.\n";
             }
-            else if (choice == "3") // Exit seat management
+            else if (choice == "3")
             {
                 cout << "Exiting seat management.\n";
-                isManaging = false; // Exit the loop by changing the variable
+                isManaging = false;
             }
             else
             {
@@ -645,28 +774,51 @@ public:
             }
         }
     }
-
-    void releaseSeats(int roomIndex, const vector<string> &seats)
+    void releaseSeats(int roomIndex, const vector<string> &seats, const string &bookingDate)
     {
         for (const auto &seat : seats)
         {
-            // Check if the seat is currently booked
-            if (roomBookedSeats[roomIndex].find(seat) != roomBookedSeats[roomIndex].end() && roomBookedSeats[roomIndex][seat])
+            // Check if the seat is currently booked for the specific date
+            if (roomBookedSeats[roomIndex][bookingDate].find(seat) != roomBookedSeats[roomIndex][bookingDate].end() &&
+                roomBookedSeats[roomIndex][bookingDate][seat])
             {
-                // Mark the seat as available (released)
-                roomBookedSeats[roomIndex][seat] = false;
-                cout << "Seat " << seat << " has been released.\n";
+                // Mark the seat as available (released) for the specific date
+                roomBookedSeats[roomIndex][bookingDate][seat] = false;
+                cout << "Seat " << seat << " has been released for " << bookingDate << ".\n";
             }
             else
             {
-                cout << "Seat " << seat << " was not booked or does not exist.\n";
+                cout << "Seat " << seat << " was not booked or does not exist for " << bookingDate << ".\n";
             }
         }
     }
+    bool isSeatAvailable(int roomIndex, const string &seat, const string &bookingDate)
+    {
+        return !roomBookedSeats[roomIndex][bookingDate][seat] &&
+               !roomReservedSeats[roomIndex][bookingDate][seat];
+    }
+
+    // Fixed getDateAfterOffset function with proper date handling
+    static string getDateAfterOffset(int dayOffset)
+    {
+        time_t now = time(0);
+        tm futureTime = *localtime(&now);
+
+        // Use mktime to handle month/year transitions properly
+        futureTime.tm_mday += dayOffset;
+        mktime(&futureTime);
+
+        stringstream ss;
+        ss << (futureTime.tm_year + 1900) << "-"
+           << setfill('0') << setw(2) << (futureTime.tm_mon + 1) << "-"
+           << setfill('0') << setw(2) << futureTime.tm_mday;
+
+        return ss.str();
+    }
 };
 
-map<int, map<string, bool>> Seat::roomBookedSeats;
-map<int, map<string, bool>> Seat::roomReservedSeats;
+map<int, map<string, map<string, bool>>> Seat::roomBookedSeats;
+map<int, map<string, map<string, bool>>> Seat::roomReservedSeats;
 
 // Handles booking-related functionality
 class Booking : public BookingManager
@@ -737,15 +889,6 @@ public:
 
         double totalPrice = selectedMovie.price * ticketCount;
 
-        // Select seats
-        vector<string> selectedSeats = seatManager.selectSeats(roomChoice, ticketCount);
-
-        if (selectedSeats.size() != ticketCount)
-        {
-            cout << "Seat selection canceled.\n";
-            return;
-        }
-
         // Get booking date
         string bookingDate = getCurrentDate();
 
@@ -755,7 +898,7 @@ public:
 
         if (userChoice == "N" || userChoice == "n")
         {
-            int dayChoice;
+            int dayChoice = 0;
             cout << "Please select a number between 1 and 5 to book a date:\n";
             cout << "1. 1 day after today\n";
             cout << "2. 2 days after today\n";
@@ -764,27 +907,28 @@ public:
             cout << "5. 5 days after today\n";
             cout << "Enter your choice (1-5) or press 'n' to exit: ";
 
-            string userChoice;
-            cin >> userChoice;
+            string userInput;
+            cin >> userInput;
 
-            if (userChoice == "n" || userChoice == "N")
+            if (userInput == "n" || userInput == "N")
             {
                 cout << "Exiting date selection.\n";
-                return; 
+                return;
             }
 
             while (dayChoice < 1 || dayChoice > 5)
             {
-                if (userChoice == "1" || userChoice == "2" || userChoice == "3" || userChoice == "4" || userChoice == "5")
+                if (userInput == "1" || userInput == "2" || userInput == "3" || userInput == "4" || userInput == "5")
                 {
-                    dayChoice = stoi(userChoice);
+                    dayChoice = stoi(userInput);
+                    break;
                 }
                 else
                 {
                     cout << "Invalid input. Please enter a number between 1 and 5 or press 'n' to exit: ";
-                    cin >> userChoice;
+                    cin >> userInput;
 
-                    if (userChoice == "n" || userChoice == "N")
+                    if (userInput == "n" || userInput == "N")
                     {
                         cout << "Exiting date selection.\n";
                         return;
@@ -795,13 +939,21 @@ public:
             time_t now = time(0);
             tm *currentTime = localtime(&now);
             currentTime->tm_mday += dayChoice; // Add selected days to current date
-            mktime(currentTime);               
-            stringstream ss;
-            ss << (currentTime->tm_year + 1900) << "-"
-               << setfill('0') << setw(2) << (currentTime->tm_mon + 1) << "-"
-               << setfill('0') << setw(2) << currentTime->tm_mday;
+            mktime(currentTime);
 
-            bookingDate = ss.str(); 
+            char buffer[11]; // Buffer for date string (YYYY-MM-DD + null terminator)
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d", currentTime);
+
+            bookingDate = string(buffer);
+        }
+
+        // Select seats
+        vector<string> selectedSeats = seatManager.selectSeats(roomChoice, ticketCount, bookingDate);
+
+        if (selectedSeats.size() != ticketCount)
+        {
+            cout << "Seat selection canceled.\n";
+            return;
         }
 
         cout << "Booking date is set to: " << bookingDate << endl;
@@ -825,7 +977,7 @@ public:
             userBookings.push_back(newBooking);
 
             // Mark seats as booked
-            seatManager.bookSeats(roomChoice, selectedSeats);
+            seatManager.bookSeats(roomChoice, selectedSeats, bookingDate);
 
             cout << "Booking successfully saved!\n";
         }
@@ -835,8 +987,7 @@ public:
         }
     }
 
-    void
-    cancelBooking() override
+    void cancelBooking() override
     {
         if (userBookings.empty())
         {
@@ -857,8 +1008,10 @@ public:
 
         bookingIndex--;
 
-        seatManager.releaseSeats(userBookings[bookingIndex].room, userBookings[bookingIndex].seats);
-
+        // Updated to pass the date to releaseSeats
+        seatManager.releaseSeats(userBookings[bookingIndex].room,
+                                 userBookings[bookingIndex].seats,
+                                 userBookings[bookingIndex].date);
         cout << "Canceling booking for movie: " << userBookings[bookingIndex].movieTitle << "\n";
         double refundAmount = userBookings[bookingIndex].totalPrice;
         userBookings.erase(userBookings.begin() + bookingIndex);
@@ -929,28 +1082,28 @@ public:
 
             if (modificationChoice == "1")
             {
-                seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats);
+                // Fixed: Moved newTicketCount declaration and initialization here
+                int newTicketCount = bookingToModify.ticketCount;
 
-                int newTicketCount;
-                if (newTicketCount > 1)
-                {
-                    cout << "Enter number of tickets (for new seat selection): ";
-                    getValidQuantity("ticket count", newTicketCount);
-                }
+                seatManager.releaseSeats(bookingToModify.room,
+                                         bookingToModify.seats,
+                                         bookingToModify.date);
 
-                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room, newTicketCount);
-
+                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room,
+                                                                  newTicketCount,
+                                                                  bookingToModify.date);
                 if (newSeats.size() != newTicketCount)
                 {
                     cout << "Seat selection canceled.\n";
+                    // Rebook original seats since modification was canceled
+                    seatManager.bookSeats(bookingToModify.room,
+                                          bookingToModify.seats,
+                                          bookingToModify.date);
                     return;
                 }
 
-                seatManager.bookSeats(bookingToModify.room, newSeats);
-
+                seatManager.bookSeats(bookingToModify.room, newSeats, bookingToModify.date);
                 bookingToModify.seats = newSeats;
-                bookingToModify.totalPrice = newTicketCount * movies.rooms[bookingToModify.room][0].price;
-
                 cout << "Seats modified successfully.\n";
             }
             else if (modificationChoice == "2")
@@ -959,17 +1112,20 @@ public:
                 cout << "Enter new number of tickets: ";
                 getValidQuantity("new ticket count", newTicketCount);
 
-                seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats);
+                seatManager.releaseSeats(userBookings[bookingIndex].room,
+                                         userBookings[bookingIndex].seats,
+                                         userBookings[bookingIndex].date);
 
-                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room, newTicketCount);
-
+                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room,
+                                                                  newTicketCount,
+                                                                  bookingToModify.date);
                 if (newSeats.size() != newTicketCount)
                 {
                     cout << "Seat selection canceled.\n";
                     return;
                 }
 
-                seatManager.bookSeats(bookingToModify.room, newSeats);
+                seatManager.bookSeats(bookingToModify.room, newSeats, bookingToModify.date);
                 bookingToModify.ticketCount = newTicketCount;
                 bookingToModify.seats = newSeats;
                 bookingToModify.totalPrice = newTicketCount * movies.rooms[bookingToModify.room][0].price;
