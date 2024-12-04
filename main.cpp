@@ -450,7 +450,7 @@ public:
                 string seatId = string(1, rowLetter) + to_string(j);
 
                 bool isBooked = roomBookedSeats[roomIndex][seatId];
-                bool isReserved = roomReservedSeats[roomIndex][seatId]; 
+                bool isReserved = roomReservedSeats[roomIndex][seatId];
 
                 if (isBooked || isReserved)
                 {
@@ -691,12 +691,19 @@ public:
         cout << "Available Movies:\n";
         movies.viewMovies();
 
+        
+        if (movies.rooms.empty())
+        {
+            cout << "No movies available for booking.\n";
+            return;
+        }
+
         cout << "\nPlease enter the room number of your movie choice: ";
         getValidRoom("room number", roomChoice);
 
-        if (movies.rooms.find(roomChoice) == movies.rooms.end() || movies.rooms[roomChoice].empty())
+        if (movies.rooms[roomChoice].empty())
         {
-            cout << "Invalid room selection or no movies available in this room.\n";
+            cout << "\nNo movies available in this room.\n";
             return;
         }
 
@@ -733,16 +740,16 @@ public:
 
         if (selectedSeats.size() != ticketCount)
         {
-            cout << "Seat selection cancelled.\n";
+            cout << "Seat selection canceled.\n";
             return;
         }
 
-        // Get booking date NOTE: USE CHRONO AND VALIDATION HERE
+        // Get booking date
         string bookingDate;
         cout << "Enter booking date (YYYY-MM-DD): ";
         cin >> bookingDate;
 
-        // Confirm booking NOTE: IMPROVE VALIDATION F
+        // Confirm booking
         string confirm;
         cout << "Confirm booking? (y/n): ";
         cin >> confirm;
@@ -795,10 +802,11 @@ public:
         seatManager.releaseSeats(userBookings[bookingIndex].room, userBookings[bookingIndex].seats);
 
         cout << "Canceling booking for movie: " << userBookings[bookingIndex].movieTitle << "\n";
+        double refundAmount = userBookings[bookingIndex].totalPrice;
         userBookings.erase(userBookings.begin() + bookingIndex);
 
         cout << "Booking canceled successfully.\n";
-        cout << "PHP " << userBookings[bookingIndex].totalPrice << " has been refunded.";
+        cout << "PHP " << refundAmount << " has been refunded.\n";
     }
 
     void viewBooking() override
@@ -808,7 +816,7 @@ public:
             cout << "You currently have no bookings.\n";
             return;
         }
-        cout << "Your Bookings:\n";
+        cout << "\n\nYour Bookings:\n";
 
         for (size_t i = 0; i < userBookings.size(); ++i)
         {
@@ -830,7 +838,104 @@ public:
 
     void modifiedBooking() override
     {
-        cout << "User is modifying their booking...\n";
+        if (userBookings.empty())
+        {
+            cout << "You have no bookings to modify.\n";
+            return;
+        }
+
+        viewBooking(); 
+        int bookingIndex;
+        getValidQuantity("index", bookingIndex);
+
+        if (bookingIndex < 1 || bookingIndex > userBookings.size())
+        {
+            cout << "Invalid booking selection.\n";
+            return;
+        }
+
+        bookingIndex--; 
+        BookingInfo &bookingToModify = userBookings[bookingIndex];
+
+        bool isModified = true;
+        while (isModified)
+        {
+            cout << "Select what you want to modify:\n";
+            cout << "1. Seats\n";
+            cout << "2. Ticket count\n";
+            cout << "3. Date\n";
+            cout << "4. Exit\n";
+            string modificationChoice;
+            cout << "Enter choice for modification: ";
+            cin >> modificationChoice;
+
+            if (modificationChoice == "1") 
+            {
+                seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats);
+
+                int newTicketCount;
+                if (newTicketCount > 1)
+                {
+                    cout << "Enter number of tickets (for new seat selection): ";
+                    getValidQuantity("ticket count", newTicketCount);
+                }
+
+                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room, newTicketCount);
+
+                if (newSeats.size() != newTicketCount)
+                {
+                    cout << "Seat selection canceled.\n";
+                    return;
+                }
+
+                seatManager.bookSeats(bookingToModify.room, newSeats);
+
+                bookingToModify.seats = newSeats;
+                bookingToModify.totalPrice = newTicketCount * movies.rooms[bookingToModify.room][0].price;
+
+                cout << "Seats modified successfully.\n";
+            }
+            else if (modificationChoice == "2") 
+            {
+                int newTicketCount;
+                cout << "Enter new number of tickets: ";
+                getValidQuantity("new ticket count", newTicketCount);
+
+                seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats);
+
+                vector<string> newSeats = seatManager.selectSeats(bookingToModify.room, newTicketCount);
+
+                if (newSeats.size() != newTicketCount)
+                {
+                    cout << "Seat selection canceled.\n";
+                    return;
+                }
+
+                seatManager.bookSeats(bookingToModify.room, newSeats);
+                bookingToModify.ticketCount = newTicketCount;
+                bookingToModify.seats = newSeats;
+                bookingToModify.totalPrice = newTicketCount * movies.rooms[bookingToModify.room][0].price;
+
+                cout << "Ticket count and seats modified successfully.\n";
+            }
+            else if (modificationChoice == "3") 
+            {
+                string newDate;
+                cout << "Enter new booking date (YYYY-MM-DD): ";
+                cin >> newDate;
+                bookingToModify.date = newDate; 
+                cout << "Booking date modified successfully.\n";
+            }
+            else if (modificationChoice == "4")
+            {
+                isModified = false; 
+                cout << "Modification canceled.\n";
+            }
+            else
+            {
+                cout << "Invalid choice. Try again.\n";
+            }
+        }
     }
 };
 
@@ -933,7 +1038,8 @@ public:
              << "2 - View Seats\n"
              << "3 - Make a Booking\n"
              << "4 - Cancel a Booking\n"
-             << "5 - View Booking\n"
+             << "5 - Change Booking\n"
+             << "6 - View Booking\n"
              << "0 - Exit to Login\n";
     }
 
@@ -1004,6 +1110,10 @@ public:
                 cancelBooking();
             }
             else if (choice == "5")
+            {
+                modifiedBooking();
+            }
+            else if (choice == "6")
             {
                 viewBooking();
             }
