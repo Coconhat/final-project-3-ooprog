@@ -377,6 +377,7 @@ class Seat : public SeatManager
 private:
     // Static to record other's method booked seats
     static map<int, map<string, bool>> roomBookedSeats;
+    static map<int, map<string, bool>> roomReservedSeats; // track reserve seat by admin
 
 public:
     static void initializeSeats()
@@ -449,8 +450,9 @@ public:
                 string seatId = string(1, rowLetter) + to_string(j);
 
                 bool isBooked = roomBookedSeats[roomIndex][seatId];
+                bool isReserved = roomReservedSeats[roomIndex][seatId]; 
 
-                if (isBooked)
+                if (isBooked || isReserved)
                 {
                     cout << setw(6) << "X";
                 }
@@ -557,7 +559,88 @@ public:
 
     void manageSeatLayout() override
     {
-        cout << "Managing seat layout...\n";
+        int roomIndex;
+        cout << "Enter room number (1-4) to manage seat layout: ";
+        getValidRoom("room number", roomIndex);
+
+        bool isManaging = true; // Variable to control the loop
+
+        while (isManaging)
+        {
+            viewRoomSeats(roomIndex);
+
+            cout << "\n\nOptions:\n";
+            cout << "1. Reserve a seat\n";
+            cout << "2. Delete a reserved seat\n";
+            cout << "3. Exit seat management\n";
+            cout << "Enter your choice: ";
+            string choice;
+            cin >> choice;
+
+            if (choice == "1") // Reserve a seat
+            {
+                string selectedSeat;
+                cout << "Enter seat to reserve (e.g., A1, B2): ";
+                cin >> selectedSeat;
+
+                if (!isValidSeat(selectedSeat))
+                {
+                    cout << "Invalid seat format. Please use format like A1, B2.\n";
+                    continue;
+                }
+
+                if (roomBookedSeats[roomIndex][selectedSeat])
+                {
+                    cout << "Seat " << selectedSeat << " is already booked by a customer and cannot be reserved.\n";
+                    continue;
+                }
+
+                if (roomReservedSeats[roomIndex][selectedSeat])
+                {
+                    cout << "Seat " << selectedSeat << " is already reserved by an admin.\n";
+                    continue;
+                }
+
+                roomReservedSeats[roomIndex][selectedSeat] = true;
+                cout << "\nSeat " << selectedSeat << " reserved successfully.\n";
+            }
+            else if (choice == "2") // Delete a reserved seat
+            {
+                string selectedSeat;
+                cout << "Enter seat to delete reservation (e.g., A1, B2): ";
+                cin >> selectedSeat;
+
+                if (!isValidSeat(selectedSeat))
+                {
+                    cout << "Invalid seat format. Please use format like A1, B2.\n";
+                    continue;
+                }
+
+                if (roomBookedSeats[roomIndex][selectedSeat])
+                {
+                    cout << "Seat " << selectedSeat << " is booked by a customer and cannot be deleted.\n";
+                    continue;
+                }
+
+                if (!roomReservedSeats[roomIndex][selectedSeat])
+                {
+                    cout << "Seat " << selectedSeat << " is not reserved.\n";
+                    continue;
+                }
+
+                roomReservedSeats[roomIndex][selectedSeat] = false;
+                cout << "Reservation for seat " << selectedSeat << " has been deleted.\n";
+            }
+            else if (choice == "3") // Exit seat management
+            {
+                cout << "Exiting seat management.\n";
+                isManaging = false; // Exit the loop by changing the variable
+            }
+            else
+            {
+                cout << "Invalid choice. Please select a valid option (1, 2, or 3).\n";
+            }
+        }
     }
 
     void releaseSeats(int roomIndex, const vector<string> &seats)
@@ -580,6 +663,7 @@ public:
 };
 
 map<int, map<string, bool>> Seat::roomBookedSeats;
+map<int, map<string, bool>> Seat::roomReservedSeats;
 
 // Handles booking-related functionality
 class Booking : public BookingManager
