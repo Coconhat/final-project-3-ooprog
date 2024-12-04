@@ -6,7 +6,7 @@
 #include <chrono>
 #include <algorithm>
 #include <sstream>
-#include "inputValidation.cpp" //validation function included here
+#include "inputValidation.cpp"
 
 using namespace std;
 using namespace chrono;
@@ -85,29 +85,12 @@ public:
         getValidInput("Hour", untilHour, 0, 23);
         getValidInput("Minute", untilMinute, 0, 59);
 
-        // Convert until time to total minutes
         int endTime = untilHour * 60 + untilMinute;
 
-        // Validate time until time for next movie
         if (endTime <= startTime)
         {
             cout << "Invalid schedule: 'Until' time must be after 'Showtime'.\n";
             return; // Exit the function early if the "until time" is not valid
-        }
-
-        // Check for conflicts with existing movies in the room
-        for (const auto &movie : rooms[room])
-        {
-            int existingStartTime = stoi(movie.showtime.substr(0, 2)) * 60 + stoi(movie.showtime.substr(3, 2));
-            int existingEndTime = stoi(movie.until.substr(0, 2)) * 60 + stoi(movie.until.substr(3, 2));
-
-            if ((startTime >= existingStartTime && startTime < existingEndTime) ||
-                (endTime > existingStartTime && endTime <= existingEndTime) ||
-                (startTime <= existingStartTime && endTime >= existingEndTime))
-            {
-                cout << "Schedule conflict detected with movie \"" << movie.title << "\".\n";
-                return; // Exit the function early if there's a conflict
-            }
         }
 
         // Format times as strings
@@ -149,19 +132,7 @@ class Movies : public Cinema
 {
 public:
     static map<int, vector<Movie>> rooms;
-    Movies()
-    {
-        static bool isInitialized = false;
-        if (!isInitialized)
-        {
-            rooms[1].push_back({"Avengers: Endgame", "03:00", "05:15", 300});
-            rooms[2].push_back({"Inception", "05:30", "07:30", 150});
-            rooms[3].push_back({"The Lion King", "15:00", "17:15", 300});
-            rooms[4].push_back({"Joker", "09:30", "11:45", 250});
-            isInitialized = true;
-        }
-    }
-
+    Movies() {}
     void viewMovies() override
     {
         cout << "----------------------------------------------------------\n";
@@ -172,34 +143,28 @@ public:
              << setw(15) << "Ticket Price\n";
         cout << "----------------------------------------------------------\n";
 
-        int previousRoom = -1;
-
-        for (const auto &room : rooms)
+        for (int room = 1; room <= 4; ++room)
         {
-            if (room.first != previousRoom && previousRoom != -1)
+            // Check if the room exists in the map and has movies
+            if (rooms.find(room) == rooms.end() || rooms[room].empty())
             {
-                cout << "\n";
+                cout << setw(10) << left << room
+                     << setw(25) << "No movies available"
+                     << setw(20) << ""
+                     << setw(15) << ""
+                     << setw(15) << "" << "\n";
             }
-
-            for (const auto &movie : room.second)
+            else
             {
-
-                if (room.first != previousRoom)
+                for (const auto &movie : rooms[room])
                 {
-                    cout << setw(10) << left << to_string(room.first);
+                    cout << setw(10) << left << room
+                         << setw(25) << movie.title
+                         << setw(20) << movie.showtime
+                         << setw(15) << movie.until
+                         << setw(15) << fixed << setprecision(2) << movie.price << "\n\n";
                 }
-                else
-                {
-                    cout << setw(10) << "";
-                }
-
-                cout << setw(25) << movie.title
-                     << setw(20) << movie.showtime
-                     << setw(15) << movie.until
-                     << setw(15) << fixed << setprecision(2) << movie.price << "\n";
             }
-
-            previousRoom = room.first;
         }
 
         cout << "----------------------------------------------------------\n";
@@ -246,13 +211,13 @@ private:
     void addMovie()
     {
         int room;
-        const int maxRoom = 2;
+        const int maxRoom = 1;
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
         if (rooms[room].size() >= maxRoom)
         {
-            cout << "Room " << room << " already has 2 movies in it.\n";
+            cout << "Room " << room << " already has a movie in it.\n";
             return;
         }
 
@@ -267,7 +232,6 @@ private:
 
         int hour, minute, untilHour, untilMinute;
 
-        // Ask for showtime
         Showtime show;
         show.getSchedule(room, hour, minute, untilHour, untilMinute, rooms, showtime, until);
 
@@ -356,6 +320,8 @@ private:
     void deleteMovie()
     {
         int room;
+
+        // if no movies in all room show  no movies available
         cout << "Enter room number (1-4): ";
         getValidQuantity("room", room);
 
@@ -406,6 +372,7 @@ map<int, vector<Movie>> Movies::rooms;
 
 // Handles booking-related functionality
 class Seat : public SeatManager
+
 {
 private:
     // Static to record other's method booked seats
