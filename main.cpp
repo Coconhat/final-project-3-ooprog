@@ -486,9 +486,15 @@ public:
         // Get booking date
         string bookingDate = getCurrentDate();
 
-        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        cout << "Do you want to book for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
         string userChoice;
         cin >> userChoice;
+
+        while (userChoice != "Y" && userChoice != "y" && userChoice != "N" && userChoice != "n")
+        {
+            cout << "Invalid input. Please enter 'Y' for Yes or 'N' for No: ";
+            cin >> userChoice;
+        }
 
         if (userChoice == "N" || userChoice == "n")
         {
@@ -643,7 +649,7 @@ public:
         // Get booking date
         string bookingDate = getCurrentDate();
 
-        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        cout << "Do you want to book for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
         string userChoice;
         cin >> userChoice;
 
@@ -975,9 +981,15 @@ public:
         // Get booking date
         string bookingDate = getCurrentDate();
 
-        cout << "Do you want to use the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        cout << "Do you want to book for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
         string userChoice;
         cin >> userChoice;
+
+        while (userChoice != "Y" && userChoice != "y" && userChoice != "N" && userChoice != "n")
+        {
+            cout << "Invalid input. Please enter 'Y' for Yes or 'N' for No: ";
+            cin >> userChoice;
+        }
 
         if (userChoice == "N" || userChoice == "n")
         {
