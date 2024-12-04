@@ -297,6 +297,53 @@ void getValidInput(const string &label, int &given, int min, int max, bool allow
     }
 }
 
+void getValidTime(const string &label, int &given, int min, int max, bool allowBlank = false)
+{
+    string input;
+    while (true)
+    {
+        cout << "Enter " << label << (allowBlank ? " (leave blank to keep current): " : ": ");
+        getline(cin, input);
+
+        // If blank is allowed and input is empty, set to -1 to indicate no change
+        if (allowBlank && input.empty())
+        {
+            given = -1;
+            return;
+        }
+
+        // Check if the input contains non-numeric characters
+        bool isValid = true;
+        for (char ch : input)
+        {
+            if (!isdigit(ch))
+            {
+                isValid = false;
+                break;
+            }
+        }
+
+        // If the input is invalid, prompt the user again
+        if (!isValid)
+        {
+            cout << "Error: Please enter a valid positive integer for " << label << "." << endl;
+            continue;
+        }
+
+        // Convert the input to an integer
+        given = stoi(input);
+
+        // Ensure the input is within range
+        if (given < min || given > max)
+        {
+            cout << "Error: " << label << " must be between " << min << " and " << max << "." << endl;
+        }
+        else
+        {
+            break; // Exit the loop if valid input is given
+        }
+    }
+}
 // Function to convert a string to uppercase
 // Loops through each character in the string and converts it to uppercase.
 void toUpperCase(string &str)

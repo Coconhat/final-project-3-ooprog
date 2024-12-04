@@ -259,74 +259,72 @@ private:
         cout << "Enter room number (1-4): ";
         getValidRoom("room", room);
 
+        // Check if the room has any movies
         if (rooms.find(room) == rooms.end() || rooms[room].empty())
         {
             cout << "No movies found in Room " << room << "!\n";
             return;
         }
 
+        cout << "Editing the movie in Room " << room << ":\n";
         viewMoviesInRoom(room);
-
-        int index;
-        cout << "Enter movie index to edit: ";
-        getValidQuantity("index", index);
-
-        if (index < 1 || index > rooms[room].size())
-        {
-            cout << "Invalid movie index!\n";
-            return;
-        }
 
         string title;
         string showtime;
         string until;
         double price;
-
-        int hour, minute;
-        int untilHour, untilMinute;
+        int hour = -1, minute = -1;
+        int untilHour = -1, untilMinute = -1;
 
         cout << "Enter new title (leave blank to keep current): ";
         cin.ignore();
         getline(cin, title);
 
         cout << "\nEnter new showtime:\n";
-        getValidInput("hour", hour, 0, 24, true);
-        getValidInput("minute", minute, 0, 60, true);
+        getValidTime("hour", hour, 0, 24, true);
+        getValidTime("minute", minute, 0, 60, true);
 
         cout << "\nEnter new until time:\n";
-        getValidInput("hour", untilHour, 0, 24, true);
-        getValidInput("minute", untilMinute, 0, 60, true);
+        getValidTime("hour", untilHour, 0, 24, true);
+        getValidTime("minute", untilMinute, 0, 60, true);
 
         getValidPrice("price", price);
 
-        // Update the movie fields if they're not empty
+        Movie &movie = rooms[room][0];
+
+        // Update title if not blank
         if (!title.empty())
-            rooms[room][index - 1].title = title;
+        {
+            movie.title = title;
+        }
 
-        if (!showtime.empty())
-            rooms[room][index - 1].showtime = showtime;
+        // Update showtime only if both hour and minute are valid
+        if (hour != -1 && minute != -1)
+        {
+            stringstream ss;
+            ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
+            movie.showtime = ss.str();
+        }
 
-        if (!until.empty())
-            rooms[room][index - 1].until = until;
+        // Update until time only if both hour and minute are valid
+        if (untilHour != -1 && untilMinute != -1)
+        {
+            stringstream ff;
+            ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
+            movie.until = ff.str();
+        }
 
-        stringstream ss, ff;
-        ss << setw(2) << setfill('0') << hour << ":" << setw(2) << setfill('0') << minute;
-        rooms[room][index - 1].showtime = ss.str();
-
-        ff << setw(2) << setfill('0') << untilHour << ":" << setw(2) << setfill('0') << untilMinute;
-        rooms[room][index - 1].until = ff.str();
-
+        // Update price if positive
         if (price > 0)
-            rooms[room][index - 1].price = price;
-
-        cout << "Movie updated successfully in Room " << room << "!\n";
+        {
+            movie.price = price;
+        }
     }
 
     void deleteMovie()
     {
         int room;
 
-        // if no movies in all room show  no movies available
         cout << "Enter room number (1-4): ";
         getValidQuantity("room", room);
 
@@ -336,40 +334,49 @@ private:
             return;
         }
 
+        cout << "\nMovie in Room " << room << ":\n";
         viewMoviesInRoom(room);
 
-        int index;
-        cout << "Enter movie index to delete: ";
-        getValidQuantity("index", index);
+        string userChoice;
+        cout << "Are you sure you want to delete this movie? (Y for Yes, N for No): ";
+        cin >> userChoice;
 
-        if (index < 1 || index > rooms[room].size())
+        while (userChoice != "Y" && userChoice != "y" && userChoice != "N" && userChoice != "n")
         {
-            cout << "Invalid movie index!\n";
-            return;
+            cout << "Invalid input. Please enter 'Y' for Yes or 'N' for No: ";
+            cin >> userChoice;
         }
 
-        cout << "Movie \"" << rooms[room][index - 1].title << "\" deleted successfully from Room " << room << "!\n";
-        rooms[room].erase(rooms[room].begin() + index - 1);
+        if (userChoice == "Y" || userChoice == "y")
+        {
+            cout << "Movie \"" << rooms[room][0].title << "\" deleted successfully from Room " << room << "!\n";
+            rooms[room].clear();
+        }
+        else
+        {
+            cout << "Deletion cancelled.\n";
+        }
     }
 
     void viewMoviesInRoom(int room)
     {
-        cout << "\nMovies in Room " << room << ":\n";
         cout << "----------------------------------------------------------\n";
-        cout << setw(10) << left << "Index"
-             << setw(25) << "Movie Title"
+        cout << setw(25) << left << "Movie Title"
              << setw(20) << "Showtime"
+             << setw(15) << "Until"
              << setw(15) << "Ticket Price\n";
         cout << "----------------------------------------------------------\n";
 
-        for (int i = 0; i < rooms[room].size(); ++i)
+        if (!rooms[room].empty())
         {
-            cout << setw(10) << left << to_string(i + 1)
-                 << setw(25) << rooms[room][i].title
-                 << setw(20) << rooms[room][i].showtime
-                 << setw(15) << fixed << setprecision(2) << rooms[room][i].price << "\n";
+            for (const auto &movie : rooms[room])
+            {
+                cout << setw(25) << left << movie.title
+                     << setw(20) << movie.showtime
+                     << setw(15) << movie.until
+                     << setw(15) << fixed << setprecision(2) << movie.price << "\n";
+            }
         }
-
         cout << "----------------------------------------------------------\n";
     }
 };
@@ -486,7 +493,7 @@ public:
         // Get booking date
         string bookingDate = getCurrentDate();
 
-        cout << "Do you want to book for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        cout << "Do you want to view for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
         string userChoice;
         cin >> userChoice;
 
@@ -649,9 +656,17 @@ public:
         // Get booking date
         string bookingDate = getCurrentDate();
 
-        cout << "Do you want to book for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
+        cout << "Do you want to check for the current date (" << bookingDate << ")? (Y for Yes, N for No): ";
         string userChoice;
         cin >> userChoice;
+
+        toUpperCase(userChoice);
+
+        while (userChoice != "Y" && userChoice != "y" && userChoice != "N" && userChoice != "n")
+        {
+            cout << "Invalid input. Please enter 'Y' for Yes or 'N' for No: ";
+            cin >> userChoice;
+        }
 
         if (userChoice == "N" || userChoice == "n")
         {
@@ -723,6 +738,7 @@ public:
                 string selectedSeat;
                 cout << "Enter seat to reserve (e.g., A1, B2): ";
                 cin >> selectedSeat;
+                toUpperCase(selectedSeat);
 
                 if (!isValidSeat(selectedSeat))
                 {
@@ -750,6 +766,7 @@ public:
                 string selectedSeat;
                 cout << "Enter seat to delete reservation (e.g., A1, B2): ";
                 cin >> selectedSeat;
+                toUpperCase(selectedSeat);
 
                 if (!isValidSeat(selectedSeat))
                 {
