@@ -47,6 +47,8 @@ class BookingManager
     virtual void cancelBooking() = 0;
     virtual void modifiedBooking() = 0;
     virtual void viewBooking() = 0;
+    virtual void paymentStatus() = 0;
+    virtual void confirmPayment() = 0;
 };
 // base class for seat
 class SeatManager
@@ -579,6 +581,7 @@ public:
                 cout << "Please select seat " << (selectedSeats.size() + 1)
                      << " of " << ticketCount << " (e.g., A1, B2): ";
                 cin >> selectedSeat;
+                toUpperCase(selectedSeat);
 
                 if (!isValidSeat(selectedSeat))
                 {
@@ -819,6 +822,85 @@ public:
 
 map<int, map<string, map<string, bool>>> Seat::roomBookedSeats;
 map<int, map<string, map<string, bool>>> Seat::roomReservedSeats;
+class Payment
+{ // SINGLETON PATTERN
+private:
+    // Singleton instance
+    static Payment *instance;
+
+    // Mutex for thread safety
+    static mutex instanceMutex;
+
+    // Payment properties
+    int paymentID;
+    float amount;
+    string method;
+    string status;
+
+    // Private constructor
+    Payment() : paymentID(0), amount(0.0), method("Unknown"), status("Pending") {}
+
+public:
+    // Public static method
+    static Payment *getInstance()
+    {
+        // Mutex Thread Lock Safety
+        if (instance == nullptr)
+        {
+            lock_guard<mutex> lock(instanceMutex); // Thread-safe
+            if (instance == nullptr)
+            {
+                instance = new Payment();
+            }
+        }
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    Payment(const Payment &) = delete;
+    Payment &operator=(const Payment &) = delete;
+
+    // Setters and Getters
+    void setPaymentID(int id) { paymentID = id; }
+    int getPaymentID() const { return paymentID; }
+
+    void setAmount(float amt) { amount = amt; }
+    float getAmount() const { return amount; }
+
+    void setMethod(const string &mtd) { method = mtd; }
+    string getMethod() const { return method; }
+
+    void setStatus(const string &sts) { status = sts; }
+    string getStatus() const { return status; }
+
+    // Business logic: Payment processing
+    bool processPayment()
+    {
+        if (method == "Credit Card" || method == "Gcash" || method == "Cash")
+        {
+            status = "Processed";
+            return true;
+        }
+        else
+        {
+            status = "Failed";
+            return false;
+        }
+    }
+
+    // Business logic: Display payment details
+    void displayPaymentDetails() const
+    {
+        cout << "Payment ID: " << paymentID << endl;
+        cout << "Amount: Php: " << amount << endl;
+        cout << "Method: " << method << endl;
+        cout << "Status: " << status << endl;
+    }
+};
+
+// Initialize static members
+Payment *Payment::instance = nullptr;
+mutex Payment::instanceMutex;
 
 // Handles booking-related functionality
 class Booking : public BookingManager
@@ -835,6 +917,7 @@ private:
         int ticketCount;
         double totalPrice;
         string date;
+        string paymentStatus;
     };
     vector<BookingInfo> userBookings;
 
@@ -973,13 +1056,35 @@ public:
             ticket.printTicket();
 
             // Save the booking
-            BookingInfo newBooking = {selectedMovie.title, roomChoice, selectedSeats, ticketCount, totalPrice, bookingDate};
+            BookingInfo newBooking = {selectedMovie.title, roomChoice, selectedSeats, ticketCount, totalPrice, bookingDate, "Pending"};
             userBookings.push_back(newBooking);
 
             // Mark seats as booked
             seatManager.bookSeats(roomChoice, selectedSeats, bookingDate);
 
             cout << "Booking successfully saved!\n";
+            // Set payment status to "Pending"
+            Payment *payment = Payment::getInstance();
+            payment->setStatus("Pending");
+
+            payment->setAmount(totalPrice); // Set the amount once
+
+            // Display payment status
+            paymentStatus();
+
+            // Prompt for proceeding to payment
+            cout << "Would you like to proceed with payment? (y/n): ";
+            cin >> confirm;
+            toUpperCase(confirm);
+
+            if (confirm == "Y")
+            {
+                confirmPayment();
+            }
+            else
+            {
+                cout << "You can complete your payment later. Status remains 'Pending'.\n";
+            }
         }
         else
         {
@@ -1043,7 +1148,8 @@ public:
                 cout << seat << " ";
             }
 
-            cout << "\n   Total Price: Php" << booking.totalPrice << "\n\n";
+            cout << "\n   Total Price: Php" << booking.totalPrice << "\n"
+                 << "   Payment Status: " << (booking.paymentStatus.empty() ? "Pending" : booking.paymentStatus) << "\n\n"; // Display "Pending" if empty
         }
     }
 
@@ -1151,87 +1257,97 @@ public:
             }
         }
     }
-};
 
-class Payment
-{ // SINGLETON PATTERN
-private:
-    // Singleton instance
-    static Payment *instance;
-
-    // Mutex for thread safety
-    static mutex instanceMutex;
-
-    // Payment properties
-    int paymentID;
-    float amount;
-    string method;
-    string status;
-
-    // Private constructor
-    Payment() : paymentID(0), amount(0.0), method("Unknown"), status("Pending") {}
-
-public:
-    // Public static method
-    static Payment *getInstance()
+    void paymentStatus() override
     {
-        // Mutex Thread Lock Safety
-        if (instance == nullptr)
+        if (userBookings.empty())
         {
-            lock_guard<mutex> lock(instanceMutex); // Thread-safe
-            if (instance == nullptr)
+            cout << "No bookings found.\n";
+            return;
+        }
+
+        for (const auto &booking : userBookings)
+        {
+            cout << "Booking for movie: " << booking.movieTitle << ", Payment Status: " << booking.paymentStatus << endl;
+        }
+    }
+    void confirmPayment() override
+    {
+        Payment *payment = Payment::getInstance();
+        float totalPrice = userBookings.back().totalPrice; // Assuming we check for the last booking's total price
+        bool paymentSuccess = false;
+
+        // Input payment details
+        string method;
+        float amount;
+
+        int paymentID = rand() % 90000 + 10000; // Generates a number between 10000 and 99999
+        payment->setPaymentID(paymentID);
+
+        cout << "Payment ID: " << paymentID << endl;
+
+        string methodChoice;
+        while (true) // Loop until a valid choice is made
+        {
+            cout << "Select Payment Method:\n";
+            cout << "1 - Credit Card\n";
+            cout << "2 - Gcash\n";
+            cout << "3 - Cash\n";
+            cout << "Enter choice (1-3): ";
+            cin >> methodChoice;
+
+            if (methodChoice == "1")
             {
-                instance = new Payment();
+                payment->setMethod("Credit Card");
+                break; // Exit the loop
+            }
+            else if (methodChoice == "2")
+            {
+                payment->setMethod("Gcash");
+                break; // Exit the loop
+            }
+            else if (methodChoice == "3")
+            {
+                payment->setMethod("Cash");
+                break; // Exit the loop
+            }
+            else
+            {
+                cout << "Invalid choice. Please enter 1, 2, or 3.\n"; // Prompt user to try again
             }
         }
-        return instance;
-    }
 
-    // Delete copy constructor and assignment operator
-    Payment(const Payment &) = delete;
-    Payment &operator=(const Payment &) = delete;
-
-    // Setters and Getters
-    void setPaymentID(int id) { paymentID = id; }
-    int getPaymentID() const { return paymentID; }
-
-    void setAmount(float amt) { amount = amt; }
-    float getAmount() const { return amount; }
-
-    void setMethod(const string &mtd) { method = mtd; }
-    string getMethod() const { return method; }
-
-    void setStatus(const string &sts) { status = sts; }
-    string getStatus() const { return status; }
-
-    // Business logic: Payment processing
-    bool processPayment()
-    {
-        if (method == "Credit Card" || method == "Gcash" || method == "Cash")
+        while (!paymentSuccess) // Loop until payment is successfully processed
         {
-            status = "Processed";
-            return true;
-        }
-        else
-        {
-            status = "Failed";
-            return false;
-        }
-    }
+            cout << "Enter Amount: ";
+            getValidFloat("amount", amount);
 
-    // Business logic: Display payment details
-    void displayPaymentDetails() const
-    {
-        cout << "Payment ID: " << paymentID << endl;
-        cout << "Amount: $" << amount << endl;
-        cout << "Method: " << method << endl;
-        cout << "Status: " << status << endl;
+            // Check if the entered amount matches the total price
+            if (amount == totalPrice)
+            {
+                // Process the payment
+                if (payment->processPayment())
+                {
+                    cout << "Payment processed successfully.\n";
+                    cout << "Booking confirmed.\n";
+                    userBookings.back().paymentStatus = "Completed"; // Update the payment status
+                    break;
+                }
+                else
+                {
+                    cout << "Payment failed due to an invalid method. Please try again.\n";
+                }
+            }
+            else
+            {
+                cout << "Payment amount mismatch! Expected: Php " << totalPrice << ". Please try again.\n";
+            }
+        }
+
+        // Display payment details
+        payment->displayPaymentDetails();
     }
 };
-
-// Initialize static members
-Payment *Payment::instance = nullptr;
-mutex Payment::instanceMutex;
 
 // Handles display logic
 class Display : public Movies, public Seat, public Booking

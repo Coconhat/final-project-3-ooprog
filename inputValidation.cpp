@@ -61,7 +61,6 @@ bool isWithin15Days(const string &bookingDate)
     return true;
 }
 
-
 // Function to check if a string represents a valid number
 // This function ensures the input is a valid numeric value with at most one decimal point.
 bool isValidNum(const string &input)
@@ -87,6 +86,47 @@ bool isValidNum(const string &input)
     }
     // Return true if input is not empty and passes all checks
     return !input.empty();
+}
+
+void getValidFloat(const string &label, float &amount)
+{
+    string input;
+    while (true)
+    {
+        cout << "\nEnter " << label << ": "; // Display the prompt
+        cin >> input;
+
+        // Check if the input contains non-numeric characters
+        bool isValid = true;
+        for (char ch : input)
+        {
+            if (!isdigit(ch) && ch != '.' && ch != '-') // Allow decimal and negative for proper float input
+            {
+                isValid = false;
+                break;
+            }
+        }
+
+        // If the input is invalid or contains multiple decimal points, prompt the user again
+        if (!isValid || (input.find('.') != input.rfind('.'))) // Ensure only one decimal point
+        {
+            cout << "Error: Please enter a valid positive number." << endl;
+            continue;
+        }
+
+        // Convert the input to a float
+        amount = stof(input);
+
+        // Ensure the amount is greater than zero
+        if (amount <= 0)
+        {
+            cout << "Error: input must be greater than zero." << endl;
+        }
+        else
+        {
+            break; // Exit the loop if valid input is given
+        }
+    }
 }
 
 // Function to get a valid price from the user
