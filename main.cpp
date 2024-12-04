@@ -114,7 +114,7 @@ public:
         if (endTime <= startTime)
         {
             cout << "Invalid schedule: 'Until' time must be after 'Showtime'.\n";
-            return;
+            return; // Exit the function early if the "until time" is not valid
         }
 
         // Format times as strings
@@ -227,7 +227,7 @@ public:
             else if (choice == "0")
             {
                 cout << "Exiting Movie Management...\n";
-                this_thread::sleep_for(chrono::milliseconds(1000));
+                this_thread::sleep_for(chrono::milliseconds(1000)); // Pause for 1 second
                 break;
             }
             else
@@ -249,7 +249,7 @@ private:
         {
             cout << RED << "Room " << room << " already has a movie in it.\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(1200));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
             return;
         }
@@ -272,7 +272,7 @@ private:
         {
             cout << RED << "Movie not added due to invalid schedule.\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(2000));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
             return;
         }
@@ -283,7 +283,7 @@ private:
         rooms[room].push_back({title, showtime, until, price});
         cout << GREEN << "Movie added successfully to Room " << room << "!\n"
              << RESET;
-        this_thread::sleep_for(chrono::milliseconds(2000)); // Pause for 3 seconds
+        this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
         system("cls");
     }
 
@@ -298,7 +298,7 @@ private:
         {
             cout << ORANGE << "No movies found in Room " << room << "!\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(1200));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
             return;
         }
@@ -373,7 +373,7 @@ private:
         {
             cout << ORANGE << "No movies found in Room " << room << "!\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(1200));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
             return;
         }
@@ -395,7 +395,7 @@ private:
         {
             cout << GREEN << "Movie \"" << rooms[room][0].title << "\" deleted successfully from Room " << room << "!\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(1200));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
             rooms[room].clear();
         }
@@ -403,7 +403,7 @@ private:
         {
             cout << RED << "Deletion cancelled.\n"
                  << RESET;
-            this_thread::sleep_for(chrono::milliseconds(1200));
+            this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
             system("cls");
         }
     }
@@ -598,7 +598,7 @@ public:
             currentTime->tm_mday += dayChoice; // Add selected days to current date
             mktime(currentTime);
 
-            char buffer[11]; // Buffer for date stringss
+            char buffer[11]; // Buffer for date string (YYYY-MM-DD + null terminator)
             strftime(buffer, sizeof(buffer), "%Y-%m-%d", currentTime);
 
             bookingDate = string(buffer);
@@ -656,7 +656,7 @@ public:
                 {
                     cout << RED << "Seat " << selectedSeat << " is already booked for " << bookingDate << ". Please choose another seat.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -665,7 +665,7 @@ public:
                 {
                     cout << RED << "You have already selected seat " << selectedSeat << ". Choose a different seat.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -673,22 +673,26 @@ public:
                 selectedSeats.push_back(selectedSeat);
                 validSelection = true;
 
-                // Ask for confirmation if enough seats are selected
+                
                 if (selectedSeats.size() < ticketCount)
                 {
                     string confirm;
-                    cout << "Seat " << selectedSeat << " selected. Continue selecting? (y/n): ";
+                    cout << "Seat " << selectedSeats.back() << " selected. Continue selecting? (y/n): ";
                     cin >> confirm;
                     toUpperCase(confirm);
+
+                    
+                    while (confirm != "Y" && confirm != "N")
+                    {
+                        cout << "Invalid input. Please enter 'Y' or 'N': ";
+                        cin >> confirm;
+                        toUpperCase(confirm);
+                    }
 
                     if (confirm == "N")
                     {
                         cout << "Cancelling seat selection.\n";
-                        return {}; // Return an empty vector to indicate cancellation
-                    }
-                    else if (confirm != "Y")
-                    {
-                        cout << "Invalid input. Please enter 'y' or 'n'. Continuing selection by default.\n";
+                        return {}; 
                     }
                 }
             }
@@ -759,7 +763,7 @@ public:
                     if (userInput == "n" || userInput == "N")
                     {
                         cout << "Exiting date selection.\n";
-                        this_thread::sleep_for(chrono::milliseconds(1000));
+                        this_thread::sleep_for(chrono::milliseconds(1000)); // Pause for 1 second
                         return;
                     }
                 }
@@ -807,7 +811,7 @@ public:
                 {
                     cout << RED << "Seat " << selectedSeat << " is already booked by a customer and cannot be reserved.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -816,7 +820,7 @@ public:
                 {
                     cout << RED << "Seat " << selectedSeat << " is already reserved by an admin.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -824,7 +828,7 @@ public:
                 roomReservedSeats[roomIndex][bookingDate][selectedSeat] = true;
                 cout << GREEN << "Seat " << selectedSeat << " reserved successfully.\n"
                      << RESET;
-                this_thread::sleep_for(chrono::milliseconds(1200));
+                this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                 system("cls");
             }
             else if (choice == "2")
@@ -838,7 +842,7 @@ public:
                 {
                     cout << RED << "Invalid seat format. Please use format like A1, B2.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -853,7 +857,7 @@ public:
                 {
                     cout << RED << "Seat " << selectedSeat << " is not reserved.\n"
                          << RESET;
-                    this_thread::sleep_for(chrono::milliseconds(1200));
+                    this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                     system("cls");
                     continue;
                 }
@@ -861,7 +865,7 @@ public:
                 roomReservedSeats[roomIndex][bookingDate][selectedSeat] = false;
                 cout << GREEN << "Reservation for seat " << selectedSeat << " has been deleted.\n"
                      << RESET;
-                this_thread::sleep_for(chrono::milliseconds(1200));
+                this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                 system("cls");
             }
             else if (choice == "3")
@@ -873,7 +877,7 @@ public:
             {
                 cout << RED << "Invalid choice. Please select a valid option (1, 2, or 3).\n"
                      << RESET;
-                this_thread::sleep_for(chrono::milliseconds(1200));
+                this_thread::sleep_for(chrono::milliseconds(3000)); // Pause for 3 seconds
                 system("cls");
             }
         }
@@ -1139,7 +1143,7 @@ public:
 
             time_t now = time(0);
             tm *currentTime = localtime(&now);
-            currentTime->tm_mday += dayChoice; 
+            currentTime->tm_mday += dayChoice; // Add selected days to current date
             mktime(currentTime);
 
             char buffer[11]; // Buffer for date stringss
@@ -1159,19 +1163,11 @@ public:
 
         cout << "Booking date is set to: " << bookingDate << endl;
 
-       
+        // Confirm booking
         string confirm;
-        cout << "Confirm booking? (Y/N): ";
+        cout << "Confirm booking? (y/n): ";
         cin >> confirm;
-        toUpperCase(confirm); 
-
-        
-        while (confirm != "Y" && confirm != "N")
-        {
-            cout << "Enter Y or N only: ";
-            cin >> confirm;
-            toUpperCase(confirm); 
-        }
+        toUpperCase(confirm);
 
         if (confirm == "Y")
         {
@@ -1189,29 +1185,15 @@ public:
             seatManager.bookSeats(roomChoice, selectedSeats, bookingDate);
 
             cout << "Booking successfully saved!\n";
-
-        
+            // Set payment status to "Pending"
             Payment *payment = Payment::getInstance();
             payment->setStatus("Pending");
 
-            payment->setAmount(totalPrice); 
+            payment->setAmount(totalPrice); // Set the amount once
 
-       
+            // Display payment status
             paymentStatus();
-
-           
-            cout << "Would you like to proceed with payment? (Y/N): ";
-            cin >> confirm;
-            toUpperCase(confirm);
-
-            if (confirm == "Y")
-            {
-                confirmPayment();
-            }
-            else
-            {
-                cout << "You can complete your payment later. Status remains 'Pending'.\n";
-            }
+            confirmPayment();
         }
         else
         {
@@ -1351,7 +1333,7 @@ public:
 
                 if (priceDifference > 0)
                 {
-                    cout << "The new ticket count will cost an additional php" << priceDifference << ".\n";
+                    cout << "The new ticket count will cost an additional $" << priceDifference << ".\n";
                     cout << "Are you willing to pay the additional amount? (Y for Yes, N for No): ";
                     string paymentChoice;
                     cin >> paymentChoice;
@@ -1373,7 +1355,7 @@ public:
                         bookingToModify.seats = newSeats;
                         bookingToModify.totalPrice = newTotalPrice;
 
-                        cout << "Ticket count modified successfully. Payment of php" << priceDifference << " completed.\n";
+                        cout << "Ticket count modified successfully. Payment of $" << priceDifference << " completed.\n";
                     }
                     else
                     {
@@ -1384,7 +1366,7 @@ public:
                 else if (priceDifference < 0)
                 {
                     int refundAmount = -priceDifference;
-                    cout << "The new ticket count is cheaper by php" << refundAmount << ".\n";
+                    cout << "The new ticket count is cheaper by $" << refundAmount << ".\n";
                     cout << "You will be refunded this amount.\n";
 
                     seatManager.releaseSeats(bookingToModify.room, bookingToModify.seats, bookingToModify.date);
@@ -1462,9 +1444,6 @@ public:
 
                 // Prompt user to enter new seats for the selected date
                 vector<string> newSeats;
-
-                // show the 2d seats here
-
                 cout << "Enter new seat selections for " << bookingDate << ": ";
                 string seatInput;
                 cin.ignore(); // Clear buffer
@@ -1505,7 +1484,6 @@ public:
             {
                 isModified = false;
                 cout << "Modification canceled.\n";
-                break;
             }
             else
             {
@@ -1521,11 +1499,6 @@ public:
             cout << "No bookings found.\n";
             return;
         }
-
-        for (const auto &booking : userBookings)
-        {
-            cout << "\nBooking for movie: " << booking.movieTitle << ", Payment Status: " << booking.paymentStatus << endl;
-        }
     }
     void confirmPayment() override
     {
@@ -1537,6 +1510,7 @@ public:
         string method;
         float amount;
 
+        std::srand(static_cast<unsigned int>(std::time(nullptr)));
         int paymentID = rand() % 90000 + 10000; // Generates a number between 10000 and 99999
         payment->setPaymentID(paymentID);
 
@@ -1575,7 +1549,7 @@ public:
 
         while (!paymentSuccess) // Loop until payment is successfully processed
         {
-            cout << "Enter Amount: ";
+
             getValidFloat("amount", amount);
 
             // Check if the entered amount matches the total price
@@ -1640,7 +1614,6 @@ public:
     void adminMenu()
     {
         system("cls");
-        // add user functionality here too :>
         cout << YELLOW << "ADMIN DASHBOARD: Manage Showtimes, Tickets, & More \n"
              << MAGENTA << "1 - Manage Movies and Showtimes\n"
              << "2 - Manage Seat Layout\n"
@@ -1730,7 +1703,7 @@ public:
             else if (choice == "0")
             {
                 cout << "Exiting User Menu...\n";
-                this_thread::sleep_for(chrono::milliseconds(1000));
+                this_thread::sleep_for(chrono::milliseconds(1000)); // Pause for 1 seconds
                 break;
             }
 
